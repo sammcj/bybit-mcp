@@ -1,0 +1,43 @@
+{
+  "name": "bybit-mcp",
+  "version": "0.1.0",
+  "description": "A MCP server to interact with Bybit's API",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "bybit-mcp": "build/index.js"
+  },
+  "main": "build/index.js",
+  "files": [
+    "build",
+    "build/**/*"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "bybit",
+    "anthropic",
+    "ai",
+    "cryptocurrency",
+    "trading"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "0.6.1",
+    "bybit-api": "^3.10.27",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
