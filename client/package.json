@@ -1,0 +1,52 @@
+{
+  "name": "@bybit-mcp/client",
+  "version": "0.1.0",
+  "description": "TypeScript client for interacting with Ollama LLMs and bybit-mcp server",
+  "type": "module",
+  "bin": {
+    "bybit-mcp-client": "build/cli.js",
+    "bybit-mcp-chat": "build/launch.js"
+  },
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build",
+    "build/**/*"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x build/cli.js build/launch.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "start": "node build/launch.js",
+    "chat": "node build/launch.js"
+  },
+  "keywords": [
+    "mcp",
+    "ollama",
+    "bybit",
+    "ai",
+    "llm",
+    "client"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.0.3",
+    "ollama": "^0.5.11",
+    "commander": "^12.1.0",
+    "chalk": "^5.3.0",
+    "conf": "^13.1.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js"
+    }
+  }
+}
