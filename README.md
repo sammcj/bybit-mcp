@@ -6,6 +6,10 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) s
 
 Only ever use a read-only API key with this server. I wouldn't trust my code with your "money" and neither should you!
 
+<a href="https://glama.ai/mcp/servers/ydqbfrwdg4">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/ydqbfrwdg4/badge" alt="Bybit Server MCP server" />
+</a>
+
 ```shell
 Started integrated server
 Chatting with llama-3.2-11b-instruct:Q8_0 (Ctrl+C to exit)
