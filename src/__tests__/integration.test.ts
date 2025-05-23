@@ -265,7 +265,10 @@ describe('Bybit API Integration Tests', () => {
       }
 
       const result = await getTicker.toolCall(request)
-      expect(result.content[0].type).toBe('error')
+      expect(result.content[0].type).toBe('text')
+      expect(result.isError).toBe(true)
+      const errorData = JSON.parse(result.content[0].text as string)
+      expect(errorData.category).toBe('VALIDATION')
     })
 
     it('should handle invalid categories gracefully', async () => {
@@ -281,7 +284,10 @@ describe('Bybit API Integration Tests', () => {
       }
 
       const result = await getMarketInfo.toolCall(request)
-      expect(result.content[0].type).toBe('error')
+      expect(result.content[0].type).toBe('text')
+      expect(result.isError).toBe(true)
+      const errorData = JSON.parse(result.content[0].text as string)
+      expect(errorData.category).toBe('VALIDATION')
     })
   })
 })

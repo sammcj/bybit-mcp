@@ -4,6 +4,41 @@ import { z } from "zod"
 import { RestClientV5, APIResponseV3WithTime } from "bybit-api"
 import { getEnvConfig } from "../env.js"
 
+// Error categories for better error handling
+export enum ErrorCategory {
+  VALIDATION = "VALIDATION",
+  API_ERROR = "API_ERROR",
+  RATE_LIMIT = "RATE_LIMIT",
+  NETWORK = "NETWORK",
+  AUTHENTICATION = "AUTHENTICATION",
+  PERMISSION = "PERMISSION",
+  INTERNAL = "INTERNAL"
+}
+
+// Structured error interface
+export interface ToolError {
+  category: ErrorCategory
+  code?: string | number
+  message: string
+  details?: any
+  timestamp: string
+  tool: string
+}
+
+// Standard error codes
+export const ERROR_CODES = {
+  INVALID_INPUT: "INVALID_INPUT",
+  MISSING_REQUIRED_FIELD: "MISSING_REQUIRED_FIELD",
+  INVALID_SYMBOL: "INVALID_SYMBOL",
+  INVALID_CATEGORY: "INVALID_CATEGORY",
+  API_KEY_REQUIRED: "API_KEY_REQUIRED",
+  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
+  BYBIT_API_ERROR: "BYBIT_API_ERROR",
+  NETWORK_ERROR: "NETWORK_ERROR",
+  TIMEOUT: "TIMEOUT",
+  UNKNOWN_ERROR: "UNKNOWN_ERROR"
+} as const
+
 // Rate limit configuration (as per Bybit docs)
 const RATE_LIMIT = {
   maxRequestsPerSecond: 10,
@@ -201,33 +236,145 @@ export abstract class BaseToolImplementation {
       10010: "Insufficient balance",
     }
 
-    const error = new Error(
-      `Bybit API Error ${code}: ${errorMap[code] || message}`
-    )
-      ; (error as any).code = code
+    const errorMessage = errorMap[code] || message
+    const error = new Error(`Bybit API Error ${code}: ${errorMessage}`)
+    ; (error as any).code = code
+    ; (error as any).bybitCode = code
+    ; (error as any).category = this.categoriseBybitError(code)
     return error
   }
 
+  /**
+   * Creates a standardised ToolError object
+   */
+  protected createToolError(
+    category: ErrorCategory,
+    message: string,
+    code?: string | number,
+    details?: any
+  ): ToolError {
+    return {
+      category,
+      code,
+      message,
+      details,
+      timestamp: new Date().toISOString(),
+      tool: this.name
+    }
+  }
+
+  /**
+   * Creates a validation error for invalid input
+   */
+  protected createValidationError(message: string, details?: any): ToolError {
+    return this.createToolError(
+      ErrorCategory.VALIDATION,
+      message,
+      ERROR_CODES.INVALID_INPUT,
+      details
+    )
+  }
+
+  /**
+   * Creates an API error from Bybit response
+   */
+  protected createApiError(code: number, message: string): ToolError {
+    const category = this.categoriseBybitError(code)
+    return this.createToolError(
+      category,
+      `Bybit API Error ${code}: ${message}`,
+      code
+    )
+  }
+
+  /**
+   * Categorises Bybit API errors
+   */
+  private categoriseBybitError(code: number): ErrorCategory {
+    switch (code) {
+      case 10002:
+        return ErrorCategory.RATE_LIMIT
+      case 10003:
+      case 10004:
+        return ErrorCategory.AUTHENTICATION
+      case 10005:
+        return ErrorCategory.PERMISSION
+      case 10001:
+        return ErrorCategory.VALIDATION
+      default:
+        return ErrorCategory.API_ERROR
+    }
+  }
+
+  /**
+   * Handles errors and returns MCP-compliant CallToolResult
+   */
   protected handleError(error: any): CallToolResult {
-    const errorMessage = error instanceof Error ? error.message : String(error)
+    let toolError: ToolError
+
+    if (error instanceof Error) {
+      // Check if it's a Bybit API error (has bybitCode property)
+      if ((error as any).bybitCode) {
+        toolError = this.createApiError((error as any).bybitCode, error.message)
+      }
+      // Check if it's a validation error (from Zod)
+      else if (error.message.includes("Invalid input")) {
+        toolError = this.createValidationError(error.message)
+      }
+      // Check for specific error patterns
+      else if (error.message.includes("API credentials required") || error.message.includes("development mode")) {
+        toolError = this.createToolError(
+          ErrorCategory.AUTHENTICATION,
+          error.message,
+          ERROR_CODES.API_KEY_REQUIRED
+        )
+      } else if (error.message.includes("Rate limit")) {
+        toolError = this.createToolError(
+          ErrorCategory.RATE_LIMIT,
+          error.message,
+          ERROR_CODES.RATE_LIMIT_EXCEEDED
+        )
+      } else if (error.message.includes("timeout") || error.message.includes("Request timeout")) {
+        toolError = this.createToolError(
+          ErrorCategory.NETWORK,
+          error.message,
+          ERROR_CODES.TIMEOUT
+        )
+      } else if (error.name === "NetworkError") {
+        toolError = this.createToolError(
+          ErrorCategory.NETWORK,
+          error.message,
+          ERROR_CODES.NETWORK_ERROR
+        )
+      } else {
+        toolError = this.createToolError(
+          ErrorCategory.INTERNAL,
+          error.message,
+          ERROR_CODES.UNKNOWN_ERROR
+        )
+      }
+    } else {
+      toolError = this.createToolError(
+        ErrorCategory.INTERNAL,
+        String(error),
+        ERROR_CODES.UNKNOWN_ERROR
+      )
+    }
+
+    // Log the error
     console.error(JSON.stringify({
       jsonrpc: "2.0",
       method: "notify",
       params: {
         level: "error",
-        message: `${this.name} tool error: ${errorMessage}`
+        message: `${this.name} tool error: ${toolError.message}`
       }
     }))
 
+    // Create MCP-compliant error response
     const content: TextContent = {
       type: "text",
-      text: JSON.stringify({
-        tool: this.name,
-        error: errorMessage,
-        code: error.code,
-        status: error.status,
-        timestamp: new Date().toISOString()
-      }, null, 2),
+      text: JSON.stringify(toolError, null, 2),
       annotations: {
         audience: ["assistant", "user"],
         priority: 1

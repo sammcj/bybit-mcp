@@ -74,7 +74,12 @@ export class GetWalletBalance extends BaseToolImplementation {
       // Parse and validate input
       const validationResult = inputSchema.safeParse(request.params.arguments)
       if (!validationResult.success) {
-        throw new Error(`Invalid input: ${validationResult.error.message}`)
+        const errorDetails = validationResult.error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message,
+          code: err.code
+        }))
+        throw new Error(`Invalid input: ${JSON.stringify(errorDetails)}`)
       }
 
       const { accountType, coin } = validationResult.data

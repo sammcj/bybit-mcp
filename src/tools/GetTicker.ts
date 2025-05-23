@@ -78,7 +78,12 @@ class GetTicker extends BaseToolImplementation {
       // Parse and validate input
       const validationResult = inputSchema.safeParse(request.params.arguments)
       if (!validationResult.success) {
-        throw new Error(`Invalid input: ${JSON.stringify(validationResult.error.errors)}`)
+        const errorDetails = validationResult.error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message,
+          code: err.code
+        }))
+        throw new Error(`Invalid input: ${JSON.stringify(errorDetails)}`)
       }
 
       const { symbol, category = CONSTANTS.DEFAULT_CATEGORY as "spot" | "linear" | "inverse" } = validationResult.data
