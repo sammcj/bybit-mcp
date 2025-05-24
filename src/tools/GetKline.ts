@@ -61,37 +61,28 @@ class GetKline extends BaseToolImplementation {
 
   async toolCall(request: z.infer<typeof CallToolRequestSchema>) {
     try {
-      const args = request.params.arguments as unknown
-      if (!args || typeof args !== 'object') {
-        throw new Error("Invalid arguments")
+      this.logInfo("Starting get_kline tool call")
+
+      // Parse and validate input
+      const validationResult = inputSchema.safeParse(request.params.arguments)
+      if (!validationResult.success) {
+        const errorDetails = validationResult.error.errors.map(err => ({
+          field: err.path.join('.'),
+          message: err.message,
+          code: err.code
+        }))
+        throw new Error(`Invalid input: ${JSON.stringify(errorDetails)}`)
       }
 
-      const typedArgs = args as Record<string, unknown>
+      const {
+        symbol,
+        category = CONSTANTS.DEFAULT_CATEGORY as SupportedCategory,
+        interval = CONSTANTS.DEFAULT_INTERVAL as Interval,
+        limit,
+        includeReferenceId
+      } = validationResult.data
 
-      if (!typedArgs.symbol || typeof typedArgs.symbol !== 'string') {
-        throw new Error("Missing or invalid symbol parameter")
-      }
-
-      const symbol = typedArgs.symbol
-      const category = (
-        typedArgs.category &&
-        typeof typedArgs.category === 'string' &&
-        ["spot", "linear", "inverse"].includes(typedArgs.category)
-      ) ? typedArgs.category as SupportedCategory
-        : CONSTANTS.DEFAULT_CATEGORY as SupportedCategory
-
-      const interval = (
-        typedArgs.interval &&
-        typeof typedArgs.interval === 'string' &&
-        ["1", "3", "5", "15", "30", "60", "120", "240", "360", "720", "D", "M", "W"].includes(typedArgs.interval)
-      ) ? typedArgs.interval as Interval
-        : CONSTANTS.DEFAULT_INTERVAL as Interval
-
-      const limit = (
-        typedArgs.limit &&
-        typeof typedArgs.limit === 'string' &&
-        ["1", "10", "50", "100", "200", "500", "1000"].includes(typedArgs.limit)
-      ) ? parseInt(typedArgs.limit, 10) : 200
+      this.logInfo(`Validated arguments - symbol: ${symbol}, category: ${category}, interval: ${interval}, limit: ${limit}, includeReferenceId: ${includeReferenceId}`)
 
       const params: GetKlineParamsV5 = {
         category,
@@ -100,14 +91,13 @@ class GetKline extends BaseToolImplementation {
         limit,
       }
 
-      const response = await this.client.getKline(params)
+      // Execute API request with rate limiting and retry logic
+      const response = await this.executeRequest(async () => {
+        return await this.client.getKline(params)
+      })
 
-      if (response.retCode !== 0) {
-        throw new Error(`Bybit API error: ${response.retMsg}`)
-      }
-
-      // Transform the kline data into a more readable format and return as array
-      const formattedKlines = response.result.list.map(kline => ({
+      // Transform the kline data into a more readable format
+      const formattedKlines = response.list.map(kline => ({
         timestamp: kline[0],
         open: kline[1],
         high: kline[2],
@@ -117,8 +107,26 @@ class GetKline extends BaseToolImplementation {
         turnover: kline[6]
       }))
 
-      return this.formatResponse(formattedKlines)
+      const result = {
+        symbol,
+        category,
+        interval,
+        limit,
+        data: formattedKlines
+      }
+
+      // Add reference metadata if requested
+      const resultWithMetadata = this.addReferenceMetadata(
+        result,
+        includeReferenceId,
+        this.name,
+        `/v5/market/kline`
+      )
+
+      this.logInfo(`Successfully retrieved kline data for ${symbol}`)
+      return this.formatResponse(resultWithMetadata)
     } catch (error) {
+      this.logInfo(`Error in get_kline: ${error instanceof Error ? error.message : String(error)}`)
       return this.handleError(error)
     }
   }
