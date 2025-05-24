@@ -9,6 +9,8 @@ import { WorkflowEventEmitter, createWorkflowEvent } from '@/types/workflow';
 import { agentConfigService } from './agentConfig';
 import { aiClient } from './aiClient';
 import { mcpClient } from './mcpClient';
+import { agentMemory } from './agentMemory';
+import { performanceOptimiser } from './performanceOptimiser';
 import type { ChatMessage } from '@/types/ai';
 
 export class CustomAgentService {
@@ -17,6 +19,7 @@ export class CustomAgentService {
   private eventEmitter: WorkflowEventEmitter;
   private currentConfig: AgentConfig;
   private conversationHistory: ChatMessage[] = [];
+  private currentConversationId?: string;
 
   constructor() {
     this.eventEmitter = new WorkflowEventEmitter();
@@ -94,9 +97,9 @@ export class CustomAgentService {
   }
 
   /**
-   * Build system prompt based on configuration
+   * Build system prompt based on configuration and memory context
    */
-  private buildSystemPrompt(): string {
+  private buildSystemPrompt(symbol?: string): string {
     // Get current timestamp in YYYY-MM-DD HH:MM:SS format
     const now = new Date();
     const timestamp = now.getFullYear() + '-' +
@@ -129,7 +132,11 @@ Guidelines:
 8. IMPORTANT: For all Bybit tool calls, always include the parameter "includeReferenceId": true to enable data verification
 9. When citing specific data from tool responses, include the reference ID in square brackets like [REF001]`;
 
-    return basePrompt;
+    // Add memory context if available
+    const memoryContext = agentMemory.buildContextSummary(symbol);
+    const finalPrompt = basePrompt + memoryContext;
+
+    return finalPrompt;
   }
 
   /**
@@ -148,14 +155,48 @@ Guidelines:
 
       console.log('💬 Processing chat message with multi-step agent...');
 
+      // Start new conversation if needed
+      if (!this.currentConversationId) {
+        this.currentConversationId = agentMemory.startConversation();
+      }
+
       // Add user message to conversation history
-      this.conversationHistory.push({
+      const userMessage: ChatMessage = {
         role: 'user',
         content: message
-      });
+      };
+
+      this.conversationHistory.push(userMessage);
+      agentMemory.addMessage(this.currentConversationId, userMessage);
+
+      // Extract symbol from message for context
+      const symbolMatch = message.match(/\b([A-Z]{2,5})(?:USD|USDT)?\b/);
+      const symbol = symbolMatch ? symbolMatch[1] : undefined;
 
       // Run multi-step agent loop
-      const result = await this.runAgentLoop();
+      const result = await this.runAgentLoop(symbol);
+
+      // Add assistant response to memory
+      if (this.currentConversationId) {
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: result
+        };
+        agentMemory.addMessage(this.currentConversationId, assistantMessage);
+      }
+
+      // Record analysis in memory
+      if (symbol) {
+        const duration = Date.now() - startTime;
+        agentMemory.recordAnalysis({
+          symbol,
+          analysisType: this.determineAnalysisType(),
+          query: message,
+          response: result,
+          toolsUsed: [], // Will be populated by runAgentLoop
+          duration
+        });
+      }
 
       // Record successful query
       const duration = Date.now() - startTime;
@@ -181,12 +222,12 @@ Guidelines:
   /**
    * Run the multi-step agent reasoning loop
    */
-  private async runAgentLoop(): Promise<string> {
+  private async runAgentLoop(symbol?: string): Promise<string> {
     const maxIterations = this.currentConfig.maxIterations;
     let iteration = 0;
 
     // Prepare messages with system prompt and tools
-    const systemPrompt = this.buildSystemPrompt();
+    const systemPrompt = this.buildSystemPrompt(symbol);
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...this.conversationHistory
@@ -372,6 +413,19 @@ Guidelines:
   }
 
   /**
+   * Determine analysis type based on current configuration
+   */
+  private determineAnalysisType(): 'quick' | 'standard' | 'comprehensive' {
+    const maxIterations = this.currentConfig.maxIterations;
+    if (maxIterations <= 2) return 'quick';
+    if (maxIterations <= 5) return 'standard';
+    return 'comprehensive';
+  }
+
+  // Note: Market context updating will be implemented in future iterations
+  // when tool response interception is added to the agent loop
+
+  /**
    * Reinitialize agents when configuration changes
    */
   private async reinitializeAgents(): Promise<void> {
@@ -385,6 +439,56 @@ Guidelines:
     } catch (error) {
       console.error('❌ Failed to reinitialize agents:', error);
     }
+  }
+
+  /**
+   * Get memory statistics
+   */
+  getMemoryStats() {
+    return agentMemory.getMemoryStats();
+  }
+
+  /**
+   * Get performance statistics
+   */
+  getPerformanceStats() {
+    return performanceOptimiser.getPerformanceStats();
+  }
+
+  /**
+   * Get conversation history for a symbol
+   */
+  getSymbolHistory(symbol: string, limit: number = 5) {
+    return agentMemory.getSymbolContext(symbol, limit);
+  }
+
+  /**
+   * Get recent analysis history
+   */
+  getAnalysisHistory(symbol?: string, limit: number = 10) {
+    if (symbol) {
+      return agentMemory.getSymbolAnalysisHistory(symbol, limit);
+    }
+    return agentMemory.getRecentAnalysisHistory(limit);
+  }
+
+  /**
+   * Clear all memory data
+   */
+  clearMemory(): void {
+    agentMemory.clearAllMemory();
+    this.conversationHistory = [];
+    this.currentConversationId = undefined;
+    console.log('🧹 Agent memory cleared');
+  }
+
+  /**
+   * Start a new conversation session
+   */
+  startNewConversation(): void {
+    this.conversationHistory = [];
+    this.currentConversationId = undefined;
+    console.log('🆕 New conversation session started');
   }
 }
 

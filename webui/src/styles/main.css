@@ -9,6 +9,8 @@
 @import './base.css';
 @import './components.css';
 @import './citations.css';
+@import './verification-panel.css';
+@import './agent-dashboard.css';
 
 /* Responsive design */
 @media (max-width: 768px) {

@@ -20,7 +20,8 @@
     "cors": "2.8.5",
     "date-fns": "^4.1.0",
     "express": "5.1.0",
-    "lightweight-charts": "^5.0.7"
+    "lightweight-charts": "^5.0.7",
+    "marked": "15.0.12"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

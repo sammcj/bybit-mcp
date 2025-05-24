@@ -8,6 +8,8 @@ import './styles/main.css';
 
 import { ChatApp } from './components/ChatApp';
 import { DebugConsole } from './components/DebugConsole';
+import { DataVerificationPanel } from './components/DataVerificationPanel';
+import { AgentDashboard } from './components/AgentDashboard';
 import { chartManager } from './components/ChartManager';
 import { toolsManager } from './components/ToolsManager';
 import { analysisManager } from './components/AnalysisManager';
@@ -22,6 +24,8 @@ import './services/logService';
 class App {
   private chatApp?: ChatApp;
   private debugConsole?: DebugConsole;
+  private verificationPanel?: DataVerificationPanel;
+  private agentDashboard?: AgentDashboard;
   private isInitialized = false;
   private chartsInitialized = false;
   private toolsInitialized = false;
@@ -42,6 +46,12 @@ class App {
 
       // Initialize debug console
       this.initializeDebugConsole();
+
+      // Initialize data verification panel
+      this.initializeVerificationPanel();
+
+      // Initialize agent dashboard
+      this.initializeAgentDashboard();
 
       // Hide loading and show main app
       this.hideLoading();
@@ -276,6 +286,32 @@ class App {
     });
 
     console.log('🔍 Debug console initialized (Ctrl+` to toggle)');
+  }
+
+  private initializeVerificationPanel(): void {
+    try {
+      // Initialize data verification panel
+      this.verificationPanel = new DataVerificationPanel('verification-panel-container');
+      console.log('📊 Data verification panel initialized (Ctrl+D to toggle)');
+
+      // Make panel accessible for debugging
+      (window as any).verificationPanel = this.verificationPanel;
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize verification panel:', error);
+    }
+  }
+
+  private initializeAgentDashboard(): void {
+    try {
+      // Initialize agent dashboard
+      this.agentDashboard = new AgentDashboard('agent-dashboard-container');
+      console.log('🤖 Agent dashboard initialized (Ctrl+M to toggle)');
+
+      // Make dashboard accessible for debugging
+      (window as any).agentDashboard = this.agentDashboard;
+    } catch (error) {
+      console.warn('⚠️ Failed to initialize agent dashboard:', error);
+    }
   }
 
   private openSettingsModal(): void {
