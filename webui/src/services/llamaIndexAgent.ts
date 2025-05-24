@@ -53,7 +53,6 @@ export class CustomAgentService {
       console.log('✅ LlamaIndex Agent Service initialized successfully');
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown initialization error';
       console.error('❌ Failed to initialize LlamaIndex Agent Service:', error);
 
       agentConfigService.updateState({

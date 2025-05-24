@@ -91,7 +91,7 @@ export class AgentConfigService {
   /**
    * Record a successful query
    */
-  recordQuery(responseTime: number, toolCallsCount: number): void {
+  recordQuery(responseTime: number, _toolCallsCount: number): void {
     const currentState = this.getState();
     const queryCount = currentState.queryCount + 1;
     const averageResponseTime =
