@@ -6,47 +6,6 @@ A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) s
 
 Only ever use a read-only API key with this server. I wouldn't trust my code with your "money" and neither should you!
 
-```shell
-Started integrated server
-Chatting with qwen3-30b-a3b-ud-128k-nothink:q4_k_xl (Ctrl+C to exit)
-Tools are available - ask about cryptocurrency data!
-
-You: Whats the current spot price for USDT/BTC?
-
-Assistant: <tool>get_ticker</tool>
-<arguments>
-{
-  "category": "spot",
-  "symbol": "BTCUSDT"
-}
-</arguments>
-
-Tool result: {
-  "timestamp": "2024-12-14T12:32:30.628Z",
-  "meta": {
-    "requestId": "ad5177bc-93d1-49ed-80a1-dd95b3ec970b"
-  },
-  "symbol": "BTCUSDT",
-  "category": "spot",
-  "lastPrice": "101368.71",
-  "price24hPcnt": "0.0107",
-  "highPrice24h": "102661.3",
-  "lowPrice24h": "99683.96",
-  "prevPrice24h": "100292.67",
-  "volume24h": "22543.911683",
-  "turnover24h": "2285318788.68303381",
-  "bid1Price": "101366.07",
-  "bid1Size": "0.136049",
-  "ask1Price": "101366.08",
-  "ask1Size": "0.648039",
-  "usdIndexPrice": "101365.707576"
-}
-
-Processing result...
-
-The current spot price for USDT/BTC is $101,368.71.
-```
-
 ## Features
 
 This MCP server provides the following tools for interacting with Bybit's API:
@@ -60,10 +19,20 @@ This MCP server provides the following tools for interacting with Bybit's API:
 - `get_wallet_balance`: Get wallet balance information for the authenticated user
 - `get_positions`: Get current positions information for the authenticated user
 - `get_order_history`: Get order history for the authenticated user
+- `get_ml_rsi`: Get machine learning-based RSI (Relative Strength Index) for a trading pair
+- `get_market_structure`: Get market structure information for a trading pair
+- `get_order_blocks`: Get order block information for a trading pair
+- `get_order_history`: Get order history for the authenticated user
+- `get_orderbook`: Get orderbook (market depth) data for a trading pair
+- `get_ticker`: Get real-time ticker information for a trading pair
+
+There is also a **highly experimental** WebUI, see [WebUI README](webui/README.md) for details.
+
+All code is subject to breaking changes and feature additions / removals as I continue to develop this project.
 
 ## Requirements & Installation
 
-1. Node.js (v20+)
+1. Node.js (v22+)
 2. pnpm (`npm i -g pnpm`)
 3. If you want to run the Ollama client as shown in the quick start below, you'll need Ollama installed and running, as well as your model of choice.
 
