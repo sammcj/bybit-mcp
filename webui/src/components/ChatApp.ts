@@ -2,7 +2,7 @@
  * Main chat application component
  */
 
-import type { ChatUIMessage, ChatState } from '@/types/ai';
+import type { ChatUIMessage, ChatState, ChatMessage } from '@/types/ai';
 import { aiClient } from '@/services/aiClient';
 import { mcpClient } from '@/services/mcpClient';
 import { configService } from '@/services/configService';
@@ -20,6 +20,7 @@ export class ChatApp {
   private sendBtn: HTMLButtonElement;
   private connectionStatus: HTMLElement;
   private typingIndicator: HTMLElement;
+  private fullConversationHistory: ChatMessage[] = []; // Track complete conversation including tool calls
 
   constructor() {
     // Get DOM elements
@@ -149,18 +150,31 @@ export class ChatApp {
     try {
       console.log('💬 Starting chat request...');
 
-      // Prepare messages for AI
-      const messages = this.state.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      // Use the full conversation history if available, otherwise prepare from UI messages
+      let aiMessages: ChatMessage[];
 
-      // Add system prompt
-      const systemPrompt = configService.getAIConfig().systemPrompt;
-      const aiMessages = [
-        { role: 'system' as const, content: systemPrompt },
-        ...messages,
-      ];
+      if (this.fullConversationHistory.length > 0) {
+        // Use the complete conversation history (includes tool calls and responses)
+        aiMessages = [...this.fullConversationHistory];
+        // Add the new user message
+        aiMessages.push({
+          role: 'user',
+          content: messageContent,
+        });
+      } else {
+        // First message - prepare from UI messages
+        const messages = this.state.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+
+        // Add system prompt
+        const systemPrompt = configService.getAIConfig().systemPrompt;
+        aiMessages = [
+          { role: 'system' as const, content: systemPrompt },
+          ...messages,
+        ];
+      }
 
       console.log('📝 Prepared messages:', aiMessages);
 
@@ -170,21 +184,38 @@ export class ChatApp {
       const conversationMessages = await aiClient.chatWithTools(aiMessages);
       console.log('✅ Got conversation messages:', conversationMessages.length);
 
-      // Find the final assistant response
-      const finalAssistantMessage = conversationMessages
-        .filter(msg => msg.role === 'assistant')
-        .pop();
+      // Update the full conversation history with the complete conversation
+      this.fullConversationHistory = conversationMessages;
+      console.log('📝 Updated full conversation history:', this.fullConversationHistory.length, 'messages');
 
-      if (finalAssistantMessage) {
-        // Create assistant message
+      // Find new assistant messages to add to the UI
+      // We only want to show the final assistant response(s) in the UI
+      const assistantMessages = conversationMessages.filter(msg => msg.role === 'assistant');
+      const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+
+      if (lastAssistantMessage && lastAssistantMessage.content) {
+        // Add the final assistant response to the UI
         const assistantMessage: ChatUIMessage = {
           id: this.generateMessageId(),
           role: 'assistant',
-          content: finalAssistantMessage.content || '',
+          content: lastAssistantMessage.content,
           timestamp: Date.now(),
+          tool_calls: lastAssistantMessage.tool_calls, // Preserve tool calls for debugging
         };
-
         this.addMessage(assistantMessage);
+      } else {
+        // No content in the final response - this might be the blank response issue
+        console.warn('⚠️ No content in final assistant message:', lastAssistantMessage);
+
+        // Add a fallback message
+        const errorMessage: ChatUIMessage = {
+          id: this.generateMessageId(),
+          role: 'assistant',
+          content: 'I apologize, but I received an empty response. Please try your question again.',
+          timestamp: Date.now(),
+          error: 'Empty response from AI',
+        };
+        this.addMessage(errorMessage);
       }
 
     } catch (error) {
@@ -294,6 +325,7 @@ export class ChatApp {
 
   public clearMessages(): void {
     this.state.messages = [];
+    this.fullConversationHistory = [];
     this.chatMessages.innerHTML = '';
     this.loadWelcomeMessage();
   }

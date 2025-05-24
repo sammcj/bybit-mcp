@@ -141,6 +141,61 @@ export class MCPClient {
   }
 
   /**
+   * Validate and convert parameters based on tool schema
+   */
+  private validateAndConvertParams(toolName: string, params: Record<string, any>): Record<string, any> {
+    const tool = this.getTool(toolName);
+    if (!tool || !tool.inputSchema || !tool.inputSchema.properties) {
+      return params;
+    }
+
+    const convertedParams: Record<string, any> = {};
+    const schema = tool.inputSchema.properties;
+
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined || value === null) {
+        continue;
+      }
+
+      const propertySchema = schema[key] as any;
+      if (!propertySchema) {
+        convertedParams[key] = value;
+        continue;
+      }
+
+      // Convert based on schema type
+      if (propertySchema.type === 'number') {
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        if (!isNaN(numValue)) {
+          convertedParams[key] = numValue;
+        } else {
+          console.warn(`⚠️ Invalid number value for ${key}: ${value}`);
+          convertedParams[key] = value; // Keep original value
+        }
+      } else if (propertySchema.type === 'integer') {
+        const intValue = typeof value === 'string' ? parseInt(value, 10) : value;
+        if (!isNaN(intValue)) {
+          convertedParams[key] = intValue;
+        } else {
+          console.warn(`⚠️ Invalid integer value for ${key}: ${value}`);
+          convertedParams[key] = value; // Keep original value
+        }
+      } else if (propertySchema.type === 'boolean') {
+        if (typeof value === 'string') {
+          convertedParams[key] = value.toLowerCase() === 'true';
+        } else {
+          convertedParams[key] = Boolean(value);
+        }
+      } else {
+        // String or other types - keep as is
+        convertedParams[key] = value;
+      }
+    }
+
+    return convertedParams;
+  }
+
+  /**
    * Call a specific MCP tool using HTTP
    */
   async callTool<T extends MCPToolName>(
@@ -150,6 +205,10 @@ export class MCPClient {
     try {
       console.log(`🔧 Calling tool ${name} with params:`, params);
 
+      // Validate and convert parameters
+      const convertedParams = this.validateAndConvertParams(name as string, params as Record<string, any>);
+      console.log(`🔧 Converted params:`, convertedParams);
+
       const response = await fetch(`${this.baseUrl}/call-tool`, {
         method: 'POST',
         headers: {
@@ -157,7 +216,7 @@ export class MCPClient {
         },
         body: JSON.stringify({
           name: name as string,
-          arguments: params as Record<string, unknown>,
+          arguments: convertedParams,
         }),
       });
 

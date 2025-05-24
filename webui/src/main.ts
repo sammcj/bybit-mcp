@@ -258,14 +258,24 @@ class App {
 
     // Populate current settings
     const settings = configService.getSettings();
+    console.log('🔧 Opening settings modal with current settings:', settings);
 
     const aiEndpoint = document.getElementById('ai-endpoint') as HTMLInputElement;
     const aiModel = document.getElementById('ai-model') as HTMLInputElement;
     const mcpEndpoint = document.getElementById('mcp-endpoint') as HTMLInputElement;
 
-    if (aiEndpoint) aiEndpoint.value = settings.ai.endpoint;
-    if (aiModel) aiModel.value = settings.ai.model;
-    if (mcpEndpoint) mcpEndpoint.value = settings.mcp.endpoint;
+    if (aiEndpoint) {
+      aiEndpoint.value = settings.ai.endpoint;
+      console.log('📝 Set AI endpoint field to:', settings.ai.endpoint);
+    }
+    if (aiModel) {
+      aiModel.value = settings.ai.model;
+      console.log('📝 Set AI model field to:', settings.ai.model);
+    }
+    if (mcpEndpoint) {
+      mcpEndpoint.value = settings.mcp.endpoint;
+      console.log('📝 Set MCP endpoint field to:', settings.mcp.endpoint);
+    }
 
     modal.classList.remove('hidden');
   }
@@ -275,26 +285,47 @@ class App {
     const aiModel = document.getElementById('ai-model') as HTMLInputElement;
     const mcpEndpoint = document.getElementById('mcp-endpoint') as HTMLInputElement;
 
+    console.log('💾 Saving settings from modal...');
+    console.log('AI Endpoint:', aiEndpoint?.value);
+    console.log('AI Model:', aiModel?.value);
+    console.log('MCP Endpoint:', mcpEndpoint?.value);
+
     const currentSettings = configService.getSettings();
     const updates: Partial<typeof currentSettings> = {};
 
-    if (aiEndpoint?.value) {
-      updates.ai = { ...configService.getAIConfig(), endpoint: aiEndpoint.value };
+    // Build AI config updates
+    const aiUpdates: Partial<typeof currentSettings.ai> = {};
+    let hasAIUpdates = false;
+
+    if (aiEndpoint?.value && aiEndpoint.value.trim() !== '') {
+      aiUpdates.endpoint = aiEndpoint.value.trim();
+      hasAIUpdates = true;
     }
 
-    if (aiModel?.value) {
-      updates.ai = { ...updates.ai, ...configService.getAIConfig(), model: aiModel.value };
+    if (aiModel?.value && aiModel.value.trim() !== '') {
+      aiUpdates.model = aiModel.value.trim();
+      hasAIUpdates = true;
     }
 
-    if (mcpEndpoint?.value) {
-      updates.mcp = { ...configService.getMCPConfig(), endpoint: mcpEndpoint.value };
+    if (hasAIUpdates) {
+      updates.ai = { ...currentSettings.ai, ...aiUpdates };
     }
+
+    // Build MCP config updates
+    if (mcpEndpoint?.value && mcpEndpoint.value.trim() !== '') {
+      updates.mcp = { ...currentSettings.mcp, endpoint: mcpEndpoint.value.trim() };
+    }
+
+    console.log('📝 Settings updates:', updates);
 
     if (Object.keys(updates).length > 0) {
       configService.updateSettings(updates);
+      console.log('✅ Settings saved successfully');
 
       // Reinitialize services with new config
       this.initializeServices().catch(console.error);
+    } else {
+      console.log('ℹ️ No settings changes to save');
     }
 
     // Close modal
