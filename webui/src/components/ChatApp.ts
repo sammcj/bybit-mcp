@@ -8,6 +8,7 @@ import { llamaIndexAgent } from '@/services/llamaIndexAgent';
 import { agentConfigService } from '@/services/agentConfig';
 import { mcpClient } from '@/services/mcpClient';
 import { configService } from '@/services/configService';
+import { citationProcessor } from '@/services/citationProcessor';
 import type { WorkflowEvent } from '@/types/workflow';
 
 export class ChatApp {
@@ -398,17 +399,161 @@ export class ChatApp {
     `;
 
     this.chatMessages.appendChild(messageElement);
+
+    // Add citation event listeners if this is an assistant message
+    if (message.role === 'assistant') {
+      this.addCitationEventListeners(messageElement);
+    }
   }
 
 
 
   private formatMessageContent(content: string): string {
-    // Basic markdown-like formatting
-    return content
+    // Process citations first
+    const processedMessage = citationProcessor.processMessage(content);
+
+    // Basic markdown-like formatting on the processed content
+    return processedMessage.processedContent
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code>$1</code>')
       .replace(/\n/g, '<br>');
+  }
+
+  /**
+   * Add event listeners for citation interactions
+   */
+  private addCitationEventListeners(messageElement: HTMLElement): void {
+    const citationRefs = messageElement.querySelectorAll('.citation-ref');
+
+    citationRefs.forEach(citationRef => {
+      const element = citationRef as HTMLElement;
+      const referenceId = element.dataset.referenceId;
+
+      if (!referenceId) return;
+
+      // Add click handler
+      element.addEventListener('click', () => {
+        this.handleCitationClick(referenceId);
+      });
+
+      // Add hover handlers for tooltip
+      let tooltipTimeout: NodeJS.Timeout;
+      let tooltip: HTMLElement | null = null;
+
+      element.addEventListener('mouseenter', () => {
+        tooltipTimeout = setTimeout(() => {
+          tooltip = this.showCitationTooltip(element, referenceId);
+        }, 500); // Show tooltip after 500ms hover
+      });
+
+      element.addEventListener('mouseleave', () => {
+        clearTimeout(tooltipTimeout);
+        if (tooltip) {
+          tooltip.remove();
+          tooltip = null;
+        }
+      });
+
+      // Add keyboard support
+      element.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.handleCitationClick(referenceId);
+        }
+      });
+    });
+  }
+
+  /**
+   * Handle citation click to show full data
+   */
+  private handleCitationClick(referenceId: string): void {
+    const tooltipData = citationProcessor.getCitationTooltipData(referenceId);
+
+    if (!tooltipData) {
+      console.warn(`No citation data found for ${referenceId}`);
+      return;
+    }
+
+    // Create and show modal with full citation data
+    this.showCitationModal(tooltipData);
+  }
+
+  /**
+   * Show citation tooltip on hover
+   */
+  private showCitationTooltip(element: HTMLElement, referenceId: string): HTMLElement | null {
+    const tooltipData = citationProcessor.getCitationTooltipData(referenceId);
+
+    if (!tooltipData) {
+      return null;
+    }
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'citation-tooltip-container';
+    tooltip.innerHTML = citationProcessor.createTooltipContent(tooltipData);
+
+    // Position tooltip relative to the citation element
+    const rect = element.getBoundingClientRect();
+    tooltip.style.position = 'absolute';
+    tooltip.style.top = `${rect.bottom + 5}px`;
+    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.zIndex = '1000';
+
+    document.body.appendChild(tooltip);
+    return tooltip;
+  }
+
+  /**
+   * Show citation modal with full data
+   */
+  private showCitationModal(tooltipData: any): void {
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'citation-modal-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'citation-modal';
+
+    modal.innerHTML = `
+      <div class="citation-modal-header">
+        <h3>Citation Data: ${tooltipData.referenceId}</h3>
+        <button class="citation-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="citation-modal-content">
+        <div class="citation-info">
+          <p><strong>Tool:</strong> ${tooltipData.toolName}</p>
+          <p><strong>Timestamp:</strong> ${citationProcessor.formatTimestamp(tooltipData.timestamp)}</p>
+          ${tooltipData.endpoint ? `<p><strong>Endpoint:</strong> ${tooltipData.endpoint}</p>` : ''}
+        </div>
+        <div class="citation-raw-data">
+          <h4>Raw Data:</h4>
+          <pre><code>${JSON.stringify(tooltipData, null, 2)}</code></pre>
+        </div>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Add event listeners
+    const closeBtn = modal.querySelector('.citation-modal-close');
+    const closeModal = () => overlay.remove();
+
+    closeBtn?.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+
+    // Close on Escape key
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', handleKeydown);
+      }
+    };
+    document.addEventListener('keydown', handleKeydown);
   }
 
   private showTypingIndicator(): void {
