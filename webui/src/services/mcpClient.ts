@@ -23,7 +23,12 @@ export class MCPClient {
   private connected: boolean = false;
 
   constructor(baseUrl: string = 'http://localhost:8080', timeout: number = 30000) {
-    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+    // Use proxy in development, direct URL in production
+    if (import.meta.env.DEV) {
+      this.baseUrl = '/api/mcp'; // Use Vite proxy
+    } else {
+      this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+    }
     this.timeout = timeout;
   }
 
