@@ -229,6 +229,9 @@ export class MCPClient {
       const result = await response.json();
       console.log(`✅ Tool ${name} result:`, result);
 
+      // Process tool response for citation storage
+      citationStore.processToolResponse(result);
+
       return result as MCPToolResponse<T>;
     } catch (error) {
       console.error(`❌ Failed to call tool ${name}:`, error);
