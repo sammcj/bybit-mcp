@@ -64,13 +64,19 @@ export class CitationProcessor {
       const citationData = citationStore.getCitation(citation.referenceId);
       const hasData = citationData !== undefined;
 
+      console.log(`🔧 Converting citation ${citation.referenceId}, hasData: ${hasData}`);
+
       // Create a more compact, single-line span element
       const interactiveElement = `<span class="citation-ref ${hasData ? 'has-data' : 'no-data'}" data-reference-id="${citation.referenceId}" data-has-data="${hasData}" title="${hasData ? 'Click to view data details' : 'Citation data not available'}" role="button" tabindex="0">${citation.text}</span>`;
+
+      console.log(`🔧 Interactive element: ${interactiveElement}`);
 
       processedContent =
         processedContent.slice(0, citation.startIndex) +
         interactiveElement +
         processedContent.slice(citation.endIndex);
+
+      console.log(`🔧 Updated content: ${processedContent}`);
     }
 
     return processedContent;
