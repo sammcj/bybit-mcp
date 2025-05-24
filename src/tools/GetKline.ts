@@ -11,11 +11,22 @@ import {
 type SupportedCategory = "spot" | "linear" | "inverse"
 type Interval = "1" | "3" | "5" | "15" | "30" | "60" | "120" | "240" | "360" | "720" | "D" | "M" | "W"
 
+// Zod schema for input validation
+const inputSchema = z.object({
+  symbol: z.string().min(1, "Symbol is required"),
+  category: z.enum(["spot", "linear", "inverse"]).optional(),
+  interval: z.enum(["1", "3", "5", "15", "30", "60", "120", "240", "360", "720", "D", "M", "W"]).optional(),
+  limit: z.number().min(1).max(1000).optional().default(200),
+  includeReferenceId: z.boolean().optional().default(false)
+})
+
+type ToolArguments = z.infer<typeof inputSchema>
+
 class GetKline extends BaseToolImplementation {
   name = "get_kline";
   toolDefinition: Tool = {
     name: this.name,
-    description: "Get kline/candlestick data for a trading pair",
+    description: "Get kline/candlestick data for a trading pair. Supports optional reference ID for data verification.",
     inputSchema: {
       type: "object",
       properties: {
@@ -34,10 +45,15 @@ class GetKline extends BaseToolImplementation {
           enum: ["1", "3", "5", "15", "30", "60", "120", "240", "360", "720", "D", "M", "W"],
         },
         limit: {
-          type: "string",
+          type: "number",
           description: "Limit for the number of candles (max 1000)",
-          enum: ["1", "10", "50", "100", "200", "500", "1000"],
+          minimum: 1,
+          maximum: 1000,
         },
+        includeReferenceId: {
+          type: "boolean",
+          description: "Include reference ID and metadata for data verification (default: false)",
+        }
       },
       required: ["symbol"],
     },
