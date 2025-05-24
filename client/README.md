@@ -36,7 +36,7 @@ The client uses environment variables for configuration. You can set these in yo
 ```bash
 # Ollama configuration
 OLLAMA_HOST=http://localhost:11434
-DEFAULT_MODEL=gemma-3-27b-ud-it:q6_k_xl
+DEFAULT_MODEL=qwen3-30b-a3b-ud-128k-nothink:q4_k_xl
 
 # Debug mode
 DEBUG=false
@@ -132,7 +132,7 @@ bybit-mcp-client chat
 bybit-mcp-client chat codellama
 
 # Add a system message for context
-bybit-mcp-client chat gemma-3-27b-ud-it:q6_k_xl --system "You are a helpful assistant"
+bybit-mcp-client chat qwen3-30b-a3b-ud-128k-nothink:q4_k_xl --system "You are a helpful assistant"
 ```
 
 ### Call a Tool
@@ -170,7 +170,7 @@ await client.startIntegratedServer();
 const messages = [
   { role: 'user', content: 'Hello, how are you?' }
 ];
-const response = await client.chat('gemma-3-27b-ud-it:q6_k_xl', messages);
+const response = await client.chat('qwen3-30b-a3b-ud-128k-nothink:q4_k_xl', messages);
 console.log(response);
 
 // Call a bybit-mcp tool

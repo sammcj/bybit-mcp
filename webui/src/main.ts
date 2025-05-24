@@ -7,12 +7,16 @@ console.log('🚀 Main.ts loading...');
 import './styles/main.css';
 
 import { ChatApp } from './components/ChatApp';
+import { DebugConsole } from './components/DebugConsole';
 import { configService } from './services/configService';
 import { mcpClient } from './services/mcpClient';
 import { aiClient } from './services/aiClient';
+// Import logService to initialize console interception
+import './services/logService';
 
 class App {
   private chatApp?: ChatApp;
+  private debugConsole?: DebugConsole;
   private isInitialized = false;
 
   async initialize(): Promise<void> {
@@ -27,6 +31,9 @@ class App {
 
       // Initialize UI components
       this.initializeUI();
+
+      // Initialize debug console
+      this.initializeDebugConsole();
 
       // Hide loading and show main app
       this.hideLoading();
@@ -217,6 +224,26 @@ class App {
         }
       });
     }
+  }
+
+  private initializeDebugConsole(): void {
+    // Create debug console container
+    const debugContainer = document.createElement('div');
+    debugContainer.id = 'debug-console-container';
+    document.body.appendChild(debugContainer);
+
+    // Initialize debug console
+    this.debugConsole = new DebugConsole(debugContainer);
+
+    // Add keyboard shortcut to toggle debug console (Ctrl+` or Cmd+`)
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault();
+        this.debugConsole?.toggle();
+      }
+    });
+
+    console.log('🔍 Debug console initialized (Ctrl+` to toggle)');
   }
 
   private openSettingsModal(): void {

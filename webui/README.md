@@ -68,7 +68,7 @@ The WebUI can be configured through the settings modal (⚙️ icon) or by modif
 ### AI Configuration
 
 - **Endpoint**: URL of your AI service (default: `http://localhost:11434`)
-- **Model**: Model name to use (default: `gemma-3-27b-ud-it:q6_k_xl`)
+- **Model**: Model name to use (default: `qwen3-30b-a3b-ud-128k-nothink:q4_k_xl`)
 - **Temperature**: Response creativity (0.0 - 1.0)
 - **Max Tokens**: Maximum response length
 

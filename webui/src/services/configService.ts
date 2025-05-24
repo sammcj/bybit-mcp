@@ -9,7 +9,7 @@ const STORAGE_KEY = 'bybit-mcp-webui-settings';
 const DEFAULT_SETTINGS: ChatSettings = {
   ai: {
     endpoint: 'http://localhost:11434',
-    model: 'gemma-3-27b-ud-it:q6_k_xl',
+    model: 'qwen3-30b-a3b-ud-128k-nothink:q4_k_xl',
     temperature: 0.7,
     maxTokens: 2048,
     systemPrompt: `You are an AI assistant specialised in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.

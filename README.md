@@ -8,7 +8,7 @@ Only ever use a read-only API key with this server. I wouldn't trust my code wit
 
 ```shell
 Started integrated server
-Chatting with gemma-3-27b-ud-it:q6_k_xl (Ctrl+C to exit)
+Chatting with qwen3-30b-a3b-ud-128k-nothink:q4_k_xl (Ctrl+C to exit)
 Tools are available - ask about cryptocurrency data!
 
 You: Whats the current spot price for USDT/BTC?
@@ -136,7 +136,7 @@ The server requires Bybit API credentials to be set as environment variables:
 Client environment variables (./client/.env):
 
 - `OLLAMA_HOST`: The host of the Ollama server (defaults to http://localhost:11434)
-- `DEFAULT_MODEL`: The default model to use for chat (defaults to gemma-3-27b-ud-it:q6_k_xl)
+- `DEFAULT_MODEL`: The default model to use for chat (defaults to qwen3-30b-a3b-ud-128k-nothink:q4_k_xl)
 
 ### MCP Settings Configuration
 

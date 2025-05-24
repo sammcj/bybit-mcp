@@ -444,7 +444,7 @@ Be helpful, accurate, and focused on providing valuable trading insights while e
 export function createAIClient(config?: Partial<AIConfig>): AIClient {
   const defaultConfig: AIConfig = {
     endpoint: 'http://localhost:11434',
-    model: 'gemma-3-27b-ud-it:q6_k_xl',
+    model: 'qwen3-30b-a3b-ud-128k-nothink:q4_k_xl',
     temperature: 0.7,
     maxTokens: 2048,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,

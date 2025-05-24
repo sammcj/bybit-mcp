@@ -32,7 +32,7 @@ export function getEnvConfig(): EnvConfig {
 
   return {
     ollamaHost,
-    defaultModel: process.env.DEFAULT_MODEL || 'gemma-3-27b-ud-it:q6_k_xl',
+    defaultModel: process.env.DEFAULT_MODEL || 'qwen3-30b-a3b-ud-128k-nothink:q4_k_xl',
     debug: process.env.DEBUG === 'true',
   }
 }
