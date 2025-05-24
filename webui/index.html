@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bybit MCP WebUI</title>
+  <meta name="description" content="Modern web interface for Bybit MCP server with AI chat capabilities" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+  <div id="app">
+    <!-- Loading spinner -->
+    <div id="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading Bybit MCP WebUI...</p>
+    </div>
+    
+    <!-- Main application container -->
+    <div id="main-container" class="main-container hidden">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-content">
+          <div class="logo">
+            <h1>Bybit MCP</h1>
+            <span class="version">v1.0.0</span>
+          </div>
+          <div class="header-controls">
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+              <span class="theme-icon">🌙</span>
+            </button>
+            <button id="settings-btn" class="settings-btn" aria-label="Settings">
+              <span class="settings-icon">⚙️</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main content area -->
+      <main class="main-content">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+          <nav class="nav-menu">
+            <button class="nav-item active" data-view="chat">
+              <span class="nav-icon">💬</span>
+              <span class="nav-label">AI Chat</span>
+            </button>
+            <button class="nav-item" data-view="charts">
+              <span class="nav-icon">📈</span>
+              <span class="nav-label">Charts</span>
+            </button>
+            <button class="nav-item" data-view="tools">
+              <span class="nav-icon">🔧</span>
+              <span class="nav-label">MCP Tools</span>
+            </button>
+            <button class="nav-item" data-view="analysis">
+              <span class="nav-icon">🧠</span>
+              <span class="nav-label">Analysis</span>
+            </button>
+          </nav>
+        </aside>
+
+        <!-- Content area -->
+        <section class="content-area">
+          <!-- Chat View -->
+          <div id="chat-view" class="view active">
+            <div class="chat-container">
+              <div class="chat-messages" id="chat-messages">
+                <div class="welcome-message">
+                  <h2>Welcome to Bybit MCP AI Assistant</h2>
+                  <p>Ask me anything about cryptocurrency markets, trading data, or technical analysis!</p>
+                  <div class="example-queries">
+                    <button class="example-query">What's the current BTC price?</button>
+                    <button class="example-query">Show me ETHUSDT order blocks</button>
+                    <button class="example-query">Analyse BTCUSDT with ML-RSI</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                  <textarea 
+                    id="chat-input" 
+                    class="chat-input" 
+                    placeholder="Ask about markets, trading data, or technical analysis..."
+                    rows="1"
+                  ></textarea>
+                  <button id="send-btn" class="send-btn" disabled>
+                    <span class="send-icon">➤</span>
+                  </button>
+                </div>
+                <div class="input-status">
+                  <span id="connection-status" class="connection-status">🔴 Disconnected</span>
+                  <span id="typing-indicator" class="typing-indicator hidden">AI is typing...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts View -->
+          <div id="charts-view" class="view">
+            <div class="charts-container">
+              <div class="chart-controls">
+                <select id="symbol-select" class="symbol-select">
+                  <option value="BTCUSDT">BTC/USDT</option>
+                  <option value="ETHUSDT">ETH/USDT</option>
+                  <option value="SOLUSDT">SOL/USDT</option>
+                </select>
+                <select id="interval-select" class="interval-select">
+                  <option value="1">1m</option>
+                  <option value="5">5m</option>
+                  <option value="15">15m</option>
+                  <option value="60">1h</option>
+                  <option value="240">4h</option>
+                  <option value="D">1D</option>
+                </select>
+                <button id="refresh-chart" class="refresh-btn">Refresh</button>
+              </div>
+              <div class="chart-grid">
+                <div class="chart-panel">
+                  <h3>Price Chart</h3>
+                  <div id="price-chart" class="chart-container"></div>
+                </div>
+                <div class="chart-panel">
+                  <h3>Volume</h3>
+                  <div id="volume-chart" class="chart-container"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tools View -->
+          <div id="tools-view" class="view">
+            <div class="tools-container">
+              <h2>MCP Tools</h2>
+              <div class="tools-grid" id="tools-grid">
+                <!-- Tools will be populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Analysis View -->
+          <div id="analysis-view" class="view">
+            <div class="analysis-container">
+              <h2>Technical Analysis</h2>
+              <div class="analysis-panels">
+                <div class="analysis-panel">
+                  <h3>ML-Enhanced RSI</h3>
+                  <div id="ml-rsi-chart" class="analysis-chart"></div>
+                </div>
+                <div class="analysis-panel">
+                  <h3>Order Blocks</h3>
+                  <div id="order-blocks-chart" class="analysis-chart"></div>
+                </div>
+                <div class="analysis-panel">
+                  <h3>Market Structure</h3>
+                  <div id="market-structure-display" class="analysis-display"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button id="close-settings" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-section">
+            <h3>AI Configuration</h3>
+            <label for="ai-endpoint">AI Endpoint:</label>
+            <input type="url" id="ai-endpoint" placeholder="http://localhost:11434" />
+            <label for="ai-model">Model:</label>
+            <input type="text" id="ai-model" placeholder="llama-3.2-11b-instruct:Q8_0" />
+          </div>
+          <div class="settings-section">
+            <h3>MCP Server</h3>
+            <label for="mcp-endpoint">MCP Endpoint:</label>
+            <input type="url" id="mcp-endpoint" placeholder="http://localhost:3001" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="save-settings" class="save-btn">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

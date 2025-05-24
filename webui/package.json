@@ -1,0 +1,42 @@
+{
+  "name": "bybit-mcp-webui",
+  "version": "1.0.0",
+  "description": "Modern web interface for Bybit MCP server with AI chat capabilities",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "lightweight-charts": "^4.2.3",
+    "chart.js": "^4.4.9",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.50",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "bybit",
+    "mcp",
+    "trading",
+    "ai",
+    "chat",
+    "webui",
+    "typescript",
+    "vite"
+  ],
+  "author": "Sam McLeod",
+  "license": "MIT"
+}
