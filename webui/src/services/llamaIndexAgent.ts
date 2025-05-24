@@ -219,18 +219,35 @@ Guidelines:
 
       // No more tool calls - we have the final response
       if (latestAssistant.content) {
-        // Add final response to conversation history
-        this.conversationHistory.push({
-          role: 'assistant',
-          content: latestAssistant.content
-        });
+        // Check if content is meaningful (not just placeholder text)
+        const trimmedContent = latestAssistant.content.trim();
+        const isPlaceholder = trimmedContent === '...' ||
+                             trimmedContent === '' ||
+                             trimmedContent.length < 3;
 
-        console.log(`✅ Agent completed in ${iteration} iterations`);
-        return latestAssistant.content;
+        if (!isPlaceholder) {
+          // Add final response to conversation history
+          this.conversationHistory.push({
+            role: 'assistant',
+            content: latestAssistant.content
+          });
+
+          console.log(`✅ Agent completed in ${iteration} iterations`);
+          return latestAssistant.content;
+        } else {
+          console.log(`⚠️ Received placeholder content: "${trimmedContent}", continuing iteration...`);
+          // Continue to next iteration - treat as if no meaningful response
+        }
       }
 
-      // If we get here, something went wrong
-      throw new Error('Assistant response has no content and no tool calls');
+      // If we get here and it's not the last iteration, continue
+      if (iteration < maxIterations) {
+        console.log(`🔄 No meaningful response in iteration ${iteration}, continuing...`);
+        continue;
+      }
+
+      // If we get here on the last iteration, something went wrong
+      throw new Error('Assistant response has no meaningful content and no tool calls');
     }
 
     // Max iterations reached
