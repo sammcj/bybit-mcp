@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "concurrently \"npm run mcp:start\" \"npm run dev\"",
+    "mcp:start": "cd .. && node build/httpServer.js",
+    "mcp:build": "cd .. && pnpm build",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "type-check": "tsc --noEmit",
@@ -23,6 +26,7 @@
     "@types/node": "^22.15.21",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
+    "concurrently": "^9.1.0",
     "eslint": "^9.27.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"

@@ -127,7 +127,11 @@ export class AIClient implements AIService {
     for (const toolCall of toolCalls) {
       try {
         const { function: func } = toolCall;
-        const result = await mcpClient.callTool(func.name, func.arguments);
+        // Parse arguments if they're a string (from Ollama format)
+        const args = typeof func.arguments === 'string'
+          ? JSON.parse(func.arguments)
+          : func.arguments;
+        const result = await mcpClient.callTool(func.name, args);
 
         results.push({
           tool_call_id: toolCall.id,
@@ -182,7 +186,7 @@ export class AIClient implements AIService {
           type: 'function',
           function: {
             name: functionName,
-            arguments: args
+            arguments: JSON.stringify(args)
           }
         });
 

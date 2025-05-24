@@ -74,16 +74,12 @@ export class MCPClient {
    * Check if the MCP server is reachable
    */
   async isConnected(): Promise<boolean> {
-    if (!this.client || !this.connected) {
-      return false;
-    }
-
     try {
-      // Try to list tools as a connectivity test
-      await this.client.listTools();
-      return true;
-    } catch {
-      this.connected = false;
+      // Simple health check to the HTTP server
+      const response = await fetch(`${this.baseUrl}/health`);
+      return response.ok;
+    } catch (error) {
+      console.warn('🔍 MCP health check failed:', error);
       return false;
     }
   }

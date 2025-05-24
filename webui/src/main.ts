@@ -2,6 +2,8 @@
  * Main application entry point
  */
 
+console.log('🚀 Main.ts loading...');
+
 import './styles/main.css';
 
 import { ChatApp } from './components/ChatApp';
@@ -38,9 +40,22 @@ class App {
   }
 
   private async initializeServices(): Promise<void> {
+    console.log('🚀 Initializing services...');
+
     // Get current configuration
     const aiConfig = configService.getAIConfig();
     const mcpConfig = configService.getMCPConfig();
+
+    console.log('⚙️ AI Config:', {
+      endpoint: aiConfig.endpoint,
+      model: aiConfig.model,
+      temperature: aiConfig.temperature,
+      maxTokens: aiConfig.maxTokens
+    });
+    console.log('⚙️ MCP Config:', mcpConfig);
+
+    // Note: MCP server should be started automatically with 'pnpm dev:full'
+    console.log('💡 If MCP server is not running, use "pnpm dev:full" to start both services');
 
     // Update clients with current config
     aiClient.updateConfig(aiConfig);
@@ -48,10 +63,16 @@ class App {
     mcpClient.setTimeout(mcpConfig.timeout);
 
     // Test connections
+    console.log('🔄 Testing connections...');
     const [aiConnected, mcpConnected] = await Promise.allSettled([
       aiClient.isConnected(),
       mcpClient.isConnected(),
     ]);
+
+    console.log('📊 Connection results:', {
+      ai: aiConnected.status === 'fulfilled' ? aiConnected.value : aiConnected.reason,
+      mcp: mcpConnected.status === 'fulfilled' ? mcpConnected.value : mcpConnected.reason
+    });
 
     // Initialize MCP client (fetch available tools)
     if (mcpConnected.status === 'fulfilled' && mcpConnected.value) {
@@ -71,6 +92,8 @@ class App {
     } else {
       console.warn('⚠️ AI service not reachable');
     }
+
+    console.log('✅ Service initialization complete');
   }
 
   private initializeUI(): void {

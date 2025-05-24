@@ -35,13 +35,24 @@ A modern, lightweight web interface for the Bybit MCP (Model Context Protocol) s
 pnpm install
 ```
 
-2. Start development server:
+2. Start MCP server (in terminal 1):
+
+```bash
+cd .. && node build/httpServer.js
+```
+
+3. Start WebUI development server (in terminal 2):
 
 ```bash
 pnpm dev
 ```
 
-3. Open your browser to `http://localhost:3000`
+4. Open your browser to `http://localhost:3000`
+
+**Alternative**: Use the experimental concurrent setup:
+```bash
+pnpm dev:full
+```
 
 ### Production Build
 
