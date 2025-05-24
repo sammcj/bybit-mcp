@@ -277,14 +277,36 @@ export class ChartComponent {
 
 // Utility function to convert MCP kline data to chart format
 export function convertKlineToChartData(klineData: any[]): AppCandlestickData[] {
-  return klineData.map(item => ({
-    time: (item.startTime / 1000) as Time, // Convert to seconds
-    open: parseFloat(item.openPrice),
-    high: parseFloat(item.highPrice),
-    low: parseFloat(item.lowPrice),
-    close: parseFloat(item.closePrice),
-    volume: parseFloat(item.volume),
-  }));
+  if (!Array.isArray(klineData)) {
+    console.warn('Invalid kline data format:', klineData);
+    return [];
+  }
+
+  return klineData.map(item => {
+    // Handle different possible data formats from Bybit API
+    const startTime = item.timestamp || item.startTime || item.start || item.time;
+    const openPrice = item.open || item.openPrice || item.o;
+    const highPrice = item.high || item.highPrice || item.h;
+    const lowPrice = item.low || item.lowPrice || item.l;
+    const closePrice = item.close || item.closePrice || item.c;
+    const volume = item.volume || item.vol || item.v || 0;
+
+    return {
+      time: (parseInt(startTime) / 1000) as Time, // Convert to seconds
+      open: parseFloat(openPrice),
+      high: parseFloat(highPrice),
+      low: parseFloat(lowPrice),
+      close: parseFloat(closePrice),
+      volume: parseFloat(volume),
+    };
+  }).filter(item =>
+    // Filter out invalid data points
+    !isNaN(item.time as number) &&
+    !isNaN(item.open) &&
+    !isNaN(item.high) &&
+    !isNaN(item.low) &&
+    !isNaN(item.close)
+  ).sort((a, b) => (a.time as number) - (b.time as number)); // Sort by time
 }
 
 // Utility function to create a chart in a container
