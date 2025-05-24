@@ -24,8 +24,8 @@ export class MCPClient {
 
   constructor(baseUrl: string = 'http://localhost:8080', timeout: number = 30000) {
     // Use proxy in development, direct URL in production
-    if (import.meta.env.DEV) {
-      this.baseUrl = '/api/mcp'; // Use Vite proxy
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      this.baseUrl = '/api/mcp'; // Use Vite proxy in development
     } else {
       this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
     }
@@ -47,11 +47,15 @@ export class MCPClient {
       });
       console.log('✅ MCP client created');
 
-      // Create transport
+      // Create transport with proper endpoint
+      const mcpUrl = this.baseUrl.includes('/api/mcp')
+        ? `${window.location.origin}${this.baseUrl}`
+        : `${this.baseUrl}/mcp`;
+
       this.transport = new StreamableHTTPClientTransport(
-        new URL(`${this.baseUrl}/mcp`)
+        new URL(mcpUrl)
       );
-      console.log('✅ Transport created');
+      console.log('✅ Transport created for:', mcpUrl);
 
       // Connect to server
       console.log('🔄 Connecting to MCP server...');
