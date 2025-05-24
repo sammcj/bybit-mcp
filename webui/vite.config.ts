@@ -17,7 +17,7 @@ export default defineConfig({
     proxy: {
       // Proxy MCP server requests
       '/api/mcp': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/mcp/, ''),
       },

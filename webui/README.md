@@ -57,13 +57,13 @@ The WebUI can be configured through the settings modal (⚙️ icon) or by modif
 ### AI Configuration
 
 - **Endpoint**: URL of your AI service (default: `http://localhost:11434`)
-- **Model**: Model name to use (default: `llama-3.2-11b-instruct:Q8_0`)
+- **Model**: Model name to use (default: `gemma-3-27b-ud-it:q6_k_xl`)
 - **Temperature**: Response creativity (0.0 - 1.0)
 - **Max Tokens**: Maximum response length
 
 ### MCP Configuration
 
-- **Endpoint**: URL of your Bybit MCP server (default: `http://localhost:3001`)
+- **Endpoint**: URL of your Bybit MCP server (default: `http://localhost:8080`)
 - **Timeout**: Request timeout in milliseconds
 
 ## Available Views

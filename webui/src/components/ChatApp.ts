@@ -160,28 +160,26 @@ export class ChatApp {
         ...messages,
       ];
 
-      // Create assistant message for streaming
-      const assistantMessage: ChatUIMessage = {
-        id: this.generateMessageId(),
-        role: 'assistant',
-        content: '',
-        timestamp: Date.now(),
-        isStreaming: true,
-      };
+      // Use tool calling instead of streaming for now
+      // This allows proper tool execution and response handling
+      const conversationMessages = await aiClient.chatWithTools(aiMessages);
 
-      this.addMessage(assistantMessage);
-      this.state.currentStreamingId = assistantMessage.id;
+      // Find the final assistant response
+      const finalAssistantMessage = conversationMessages
+        .filter(msg => msg.role === 'assistant')
+        .pop();
 
-      // Stream response
-      await aiClient.streamChat(
-        aiMessages,
-        (chunk: ChatCompletionStreamResponse) => {
-          this.handleStreamChunk(chunk, assistantMessage.id);
-        }
-      );
+      if (finalAssistantMessage) {
+        // Create assistant message
+        const assistantMessage: ChatUIMessage = {
+          id: this.generateMessageId(),
+          role: 'assistant',
+          content: finalAssistantMessage.content || '',
+          timestamp: Date.now(),
+        };
 
-      // Mark streaming as complete
-      this.completeStreaming(assistantMessage.id);
+        this.addMessage(assistantMessage);
+      }
 
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -204,12 +202,7 @@ export class ChatApp {
     }
   }
 
-  private handleStreamChunk(chunk: ChatCompletionStreamResponse, messageId: string): void {
-    const choice = chunk.choices[0];
-    if (choice?.delta?.content) {
-      this.appendToMessage(messageId, choice.delta.content);
-    }
-  }
+
 
   private addMessage(message: ChatUIMessage): void {
     this.state.messages.push(message);

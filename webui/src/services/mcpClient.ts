@@ -1,10 +1,11 @@
 /**
  * MCP (Model Context Protocol) client for communicating with the Bybit MCP server
+ * Uses the official MCP SDK with StreamableHTTPClientTransport for browser compatibility
  */
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type {
-  MCPRequest,
-  MCPResponse,
   MCPTool,
   MCPToolCall,
   MCPToolResult,
@@ -16,21 +17,41 @@ import type {
 export class MCPClient {
   private baseUrl: string;
   private timeout: number;
+  private client: Client | null = null;
+  private transport: StreamableHTTPClientTransport | null = null;
   private tools: MCPTool[] = [];
+  private connected: boolean = false;
 
-  constructor(baseUrl: string = 'http://localhost:3001', timeout: number = 30000) {
+  constructor(baseUrl: string = 'http://localhost:8080', timeout: number = 30000) {
     this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.timeout = timeout;
   }
 
   /**
-   * Initialize the client and fetch available tools
+   * Initialize the client and connect to the MCP server
    */
   async initialize(): Promise<void> {
     try {
+      // Create client
+      this.client = new Client({
+        name: 'bybit-mcp-webui',
+        version: '1.0.0'
+      });
+
+      // Create transport
+      this.transport = new StreamableHTTPClientTransport(
+        new URL(`${this.baseUrl}/mcp`)
+      );
+
+      // Connect to server
+      await this.client.connect(this.transport);
+      this.connected = true;
+
+      // Load available tools
       await this.listTools();
     } catch (error) {
       console.error('Failed to initialize MCP client:', error);
+      this.connected = false;
       throw new Error('Failed to connect to MCP server');
     }
   }
@@ -39,10 +60,16 @@ export class MCPClient {
    * Check if the MCP server is reachable
    */
   async isConnected(): Promise<boolean> {
+    if (!this.client || !this.connected) {
+      return false;
+    }
+
     try {
-      const response = await this.makeRequest('tools/list', {});
-      return response.result !== undefined;
+      // Try to list tools as a connectivity test
+      await this.client.listTools();
+      return true;
     } catch {
+      this.connected = false;
       return false;
     }
   }
@@ -51,9 +78,22 @@ export class MCPClient {
    * List all available tools from the MCP server
    */
   async listTools(): Promise<MCPTool[]> {
-    const response = await this.makeRequest('tools/list', {});
-    this.tools = (response.result as any)?.tools || [];
-    return this.tools;
+    if (!this.client) {
+      throw new Error('MCP client not initialized');
+    }
+
+    try {
+      const response = await this.client.listTools();
+      this.tools = response.tools.map(tool => ({
+        name: tool.name,
+        description: tool.description || '',
+        inputSchema: tool.inputSchema,
+      }));
+      return this.tools;
+    } catch (error) {
+      console.error('Failed to list tools:', error);
+      throw error;
+    }
   }
 
   /**
@@ -77,21 +117,21 @@ export class MCPClient {
     name: T,
     params: MCPToolParams<T>
   ): Promise<MCPToolResponse<T>> {
-    const toolCall: MCPToolCall = {
-      name,
-      arguments: params as Record<string, unknown>,
-    };
-
-    const response = await this.makeRequest('tools/call', {
-      name: toolCall.name,
-      arguments: toolCall.arguments,
-    });
-
-    if (response.error) {
-      throw new Error(`Tool call failed: ${response.error.message}`);
+    if (!this.client) {
+      throw new Error('MCP client not initialized');
     }
 
-    return response.result as MCPToolResponse<T>;
+    try {
+      const result = await this.client.callTool({
+        name: name as string,
+        arguments: params as Record<string, unknown>,
+      });
+
+      return result as MCPToolResponse<T>;
+    } catch (error) {
+      console.error(`Failed to call tool ${name}:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -129,74 +169,21 @@ export class MCPClient {
   }
 
   /**
-   * Make a raw request to the MCP server
+   * Disconnect from the MCP server
    */
-  private async makeRequest(method: string, params: Record<string, unknown>): Promise<MCPResponse> {
-    const request: MCPRequest = {
-      jsonrpc: '2.0',
-      id: this.generateId(),
-      method,
-      params,
-    };
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-    try {
-      const response = await fetch(`${this.baseUrl}/mcp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  async disconnect(): Promise<void> {
+    if (this.client && this.transport) {
+      try {
+        await this.client.close();
+      } catch (error) {
+        console.error('Error disconnecting from MCP server:', error);
       }
-
-      const data = await response.json();
-
-      if (!this.isValidMCPResponse(data)) {
-        throw new Error('Invalid MCP response format');
-      }
-
-      return data;
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          throw new Error('Request timeout');
-        }
-        throw error;
-      }
-
-      throw new Error('Unknown error occurred');
     }
-  }
 
-  /**
-   * Validate MCP response format
-   */
-  private isValidMCPResponse(data: any): data is MCPResponse {
-    return (
-      typeof data === 'object' &&
-      data !== null &&
-      data.jsonrpc === '2.0' &&
-      (typeof data.id === 'string' || typeof data.id === 'number') &&
-      (data.result !== undefined || data.error !== undefined)
-    );
-  }
-
-  /**
-   * Generate a unique request ID
-   */
-  private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.client = null;
+    this.transport = null;
+    this.connected = false;
+    this.tools = [];
   }
 
   /**
@@ -204,6 +191,12 @@ export class MCPClient {
    */
   setBaseUrl(url: string): void {
     this.baseUrl = url.replace(/\/$/, '');
+    // If connected, disconnect and reconnect with new URL
+    if (this.connected) {
+      this.disconnect().then(() => {
+        this.initialize().catch(console.error);
+      });
+    }
   }
 
   /**
@@ -216,10 +209,11 @@ export class MCPClient {
   /**
    * Get current configuration
    */
-  getConfig(): { baseUrl: string; timeout: number } {
+  getConfig(): { baseUrl: string; timeout: number; isConnected: boolean } {
     return {
       baseUrl: this.baseUrl,
       timeout: this.timeout,
+      isConnected: this.connected,
     };
   }
 }

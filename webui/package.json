@@ -11,10 +11,13 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "lightweight-charts": "^5.0.7",
+    "@modelcontextprotocol/sdk": "1.12.0",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
-    "date-fns": "^4.1.0"
+    "cors": "2.8.5",
+    "date-fns": "^4.1.0",
+    "express": "5.1.0",
+    "lightweight-charts": "^5.0.7"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
@@ -38,5 +41,5 @@
     "vite"
   ],
   "author": "Sam McLeod",
- "license": "MIT"
+  "license": "MIT"
 }

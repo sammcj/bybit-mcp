@@ -9,7 +9,7 @@ const STORAGE_KEY = 'bybit-mcp-webui-settings';
 const DEFAULT_SETTINGS: ChatSettings = {
   ai: {
     endpoint: 'http://localhost:11434',
-    model: 'llama-3.2-11b-instruct:Q8_0',
+    model: 'gemma-3-27b-ud-it:q6_k_xl',
     temperature: 0.7,
     maxTokens: 2048,
     systemPrompt: `You are an AI assistant specialised in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.
@@ -32,7 +32,7 @@ When users ask about market data or analysis:
 Be helpful, accurate, and focused on providing valuable trading insights while emphasising risk management.`,
   },
   mcp: {
-    endpoint: 'http://localhost:3001',
+    endpoint: 'http://localhost:8080',
     timeout: 30000,
   },
   ui: {
@@ -152,7 +152,7 @@ export class ConfigService {
     } catch (error) {
       console.warn('Failed to load settings from localStorage:', error);
     }
-    
+
     return { ...DEFAULT_SETTINGS };
   }
 
@@ -225,7 +225,7 @@ export function updateMCPConfig(config: Partial<{ endpoint: string; timeout: num
 export function toggleTheme(): void {
   const settings = configService.getSettings();
   const currentTheme = settings.ui.theme;
-  
+
   let newTheme: 'light' | 'dark' | 'auto';
   if (currentTheme === 'light') {
     newTheme = 'dark';
@@ -234,7 +234,7 @@ export function toggleTheme(): void {
   } else {
     newTheme = 'light';
   }
-  
+
   configService.updateSettings({
     ui: { ...settings.ui, theme: newTheme },
   });

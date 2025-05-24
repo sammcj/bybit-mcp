@@ -8,7 +8,7 @@ Only ever use a read-only API key with this server. I wouldn't trust my code wit
 
 ```shell
 Started integrated server
-Chatting with llama-3.2-11b-instruct:Q8_0 (Ctrl+C to exit)
+Chatting with gemma-3-27b-ud-it:q6_k_xl (Ctrl+C to exit)
 Tools are available - ask about cryptocurrency data!
 
 You: Whats the current spot price for USDT/BTC?
@@ -87,9 +87,19 @@ code .env
 
 ### MCP-Server (Only)
 
+#### Stdio Transport (Default)
+
 ```bash
 pnpm serve
 ```
+
+#### HTTP/SSE Transport
+
+```bash
+pnpm start:http
+```
+
+The HTTP server runs on port 8080 by default and provides both modern Streamable HTTP and legacy SSE transports, making it compatible with web applications and various MCP clients. See [HTTP Server Documentation](docs/HTTP_SERVER.md) for detailed information.
 
 ### MCP-Server and Ollama client
 
@@ -126,7 +136,7 @@ The server requires Bybit API credentials to be set as environment variables:
 Client environment variables (./client/.env):
 
 - `OLLAMA_HOST`: The host of the Ollama server (defaults to http://localhost:11434)
-- `DEFAULT_MODEL`: The default model to use for chat (defaults to llama-3.2-11b-instruct:Q8_0)
+- `DEFAULT_MODEL`: The default model to use for chat (defaults to gemma-3-27b-ud-it:q6_k_xl)
 
 ### MCP Settings Configuration
 

@@ -12,6 +12,7 @@ import type {
   AIError,
   ModelInfo,
 } from '@/types/ai';
+import { mcpClient } from './mcpClient';
 
 export class AIClient implements AIService {
   private config: AIConfig;
@@ -22,18 +23,36 @@ export class AIClient implements AIService {
   }
 
   /**
-   * Send a chat completion request
+   * Send a chat completion request with tool calling support
    */
   async chat(
     messages: ChatMessage[],
     options?: Partial<ChatCompletionRequest>
   ): Promise<ChatCompletionResponse> {
+    // First, try to get available tools from MCP
+    let tools: any[] = [];
+    try {
+      const mcpTools = await mcpClient.getTools();
+      tools = mcpTools.map(tool => ({
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.inputSchema,
+        },
+      }));
+    } catch (error) {
+      console.warn('Failed to get MCP tools:', error);
+    }
+
     const request: ChatCompletionRequest = {
       model: this.config.model,
       messages,
       temperature: this.config.temperature,
       max_tokens: this.config.maxTokens,
       stream: false,
+      tools: tools.length > 0 ? tools : undefined,
+      tool_choice: tools.length > 0 ? 'auto' : undefined,
       ...options,
     };
 
@@ -61,13 +80,74 @@ export class AIClient implements AIService {
       if (error instanceof Error && error.name === 'AbortError') {
         throw this.createError('REQUEST_CANCELLED', 'Request was cancelled');
       }
-      
+
       if (error instanceof Error) {
         throw error;
       }
-      
+
       throw this.createError('UNKNOWN_ERROR', 'An unknown error occurred');
     }
+  }
+
+  /**
+   * Execute tool calls and return results
+   */
+  async executeToolCalls(toolCalls: any[]): Promise<any[]> {
+    const results = [];
+
+    for (const toolCall of toolCalls) {
+      try {
+        const { function: func } = toolCall;
+        const result = await mcpClient.callTool(func.name, func.arguments);
+
+        results.push({
+          tool_call_id: toolCall.id,
+          role: 'tool',
+          content: JSON.stringify(result, null, 2),
+        });
+      } catch (error) {
+        results.push({
+          tool_call_id: toolCall.id,
+          role: 'tool',
+          content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Send a chat completion with automatic tool calling
+   */
+  async chatWithTools(messages: ChatMessage[]): Promise<ChatMessage[]> {
+    const conversationMessages = [...messages];
+    let response = await this.chat(conversationMessages);
+
+    // Check if the response contains tool calls
+    const choice = response.choices[0];
+    if (choice?.message?.tool_calls) {
+      // Add the assistant's message with tool calls
+      conversationMessages.push({
+        role: 'assistant',
+        content: choice.message.content || '',
+        tool_calls: choice.message.tool_calls,
+      });
+
+      // Execute tool calls
+      const toolResults = await this.executeToolCalls(choice.message.tool_calls);
+
+      // Add tool results to conversation
+      conversationMessages.push(...toolResults);
+
+      // Get final response with tool results
+      response = await this.chat(conversationMessages);
+    }
+
+    return conversationMessages.concat({
+      role: 'assistant',
+      content: response.choices[0]?.message?.content || '',
+    });
   }
 
   /**
@@ -80,7 +160,7 @@ export class AIClient implements AIService {
   ): Promise<void> {
     // Cancel any existing stream
     this.cancelStream();
-    
+
     this.controller = new AbortController();
 
     const request: ChatCompletionRequest = {
@@ -121,7 +201,7 @@ export class AIClient implements AIService {
       try {
         while (true) {
           const { done, value } = await reader.read();
-          
+
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
@@ -130,7 +210,7 @@ export class AIClient implements AIService {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
-              
+
               if (data === '[DONE]') {
                 return;
               }
@@ -151,11 +231,11 @@ export class AIClient implements AIService {
       if (error instanceof Error && error.name === 'AbortError') {
         throw this.createError('REQUEST_CANCELLED', 'Stream was cancelled');
       }
-      
+
       if (error instanceof Error) {
         throw error;
       }
-      
+
       throw this.createError('STREAM_ERROR', 'Streaming failed');
     } finally {
       this.controller = undefined;
@@ -181,7 +261,7 @@ export class AIClient implements AIService {
         method: 'GET',
         signal: AbortSignal.timeout(5000), // 5 second timeout
       });
-      
+
       return response.ok;
     } catch {
       return false;
@@ -194,13 +274,13 @@ export class AIClient implements AIService {
   async getModels(): Promise<ModelInfo[]> {
     try {
       const response = await fetch(`${this.config.endpoint}/v1/models`);
-      
+
       if (!response.ok) {
         throw this.createError('API_ERROR', 'Failed to fetch models');
       }
 
       const data = await response.json();
-      
+
       if (data.data && Array.isArray(data.data)) {
         return data.data.map((model: any) => ({
           id: model.id,
@@ -231,6 +311,8 @@ export class AIClient implements AIService {
   getConfig(): AIConfig {
     return { ...this.config };
   }
+
+
 
   /**
    * Create a standardized error object
@@ -268,7 +350,7 @@ Be helpful, accurate, and focused on providing valuable trading insights while e
 export function createAIClient(config?: Partial<AIConfig>): AIClient {
   const defaultConfig: AIConfig = {
     endpoint: 'http://localhost:11434',
-    model: 'llama-3.2-11b-instruct:Q8_0',
+    model: 'gemma-3-27b-ud-it:q6_k_xl',
     temperature: 0.7,
     maxTokens: 2048,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,

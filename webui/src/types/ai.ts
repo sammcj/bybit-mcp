@@ -2,12 +2,34 @@
  * TypeScript types for AI integration (OpenAI-compatible API)
  */
 
+// Tool calling types (for function calling)
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export interface Tool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: any;
+  };
+}
+
 // Chat message types
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string | null;
   timestamp?: number;
   id?: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+  name?: string;
 }
 
 export interface ChatCompletionRequest {
@@ -20,6 +42,8 @@ export interface ChatCompletionRequest {
   presence_penalty?: number;
   stream?: boolean;
   stop?: string | string[];
+  tools?: Tool[];
+  tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
 }
 
 export interface ChatCompletionResponse {
@@ -78,31 +102,13 @@ export interface ChatState {
   currentStreamingId?: string;
 }
 
-// Tool calling types (for function calling)
-export interface ToolCall {
-  id: string;
-  type: 'function';
-  function: {
-    name: string;
-    arguments: string;
-  };
-}
 
-export interface ToolCallMessage extends Omit<ChatMessage, 'content'> {
-  content: null;
-  tool_calls: ToolCall[];
-}
-
-export interface ToolResponseMessage extends ChatMessage {
-  tool_call_id: string;
-  name: string;
-}
 
 // AI service interface
 export interface AIService {
   chat(messages: ChatMessage[], options?: Partial<ChatCompletionRequest>): Promise<ChatCompletionResponse>;
   streamChat(
-    messages: ChatMessage[], 
+    messages: ChatMessage[],
     onChunk: (chunk: ChatCompletionStreamResponse) => void,
     options?: Partial<ChatCompletionRequest>
   ): Promise<void>;
@@ -159,7 +165,7 @@ export interface ChatSettings {
 }
 
 // Event types for real-time updates
-export type ChatEvent = 
+export type ChatEvent =
   | { type: 'message_start'; messageId: string }
   | { type: 'message_chunk'; messageId: string; content: string }
   | { type: 'message_complete'; messageId: string }
