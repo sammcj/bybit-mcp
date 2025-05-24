@@ -56,6 +56,64 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Simple HTTP endpoints for WebUI integration
+app.get("/tools", async (req, res) => {
+  try {
+    const tools = await loadTools();
+    const toolsList = tools.map(tool => ({
+      name: tool.name,
+      description: tool.toolDefinition.description,
+      inputSchema: tool.toolDefinition.inputSchema
+    }));
+
+    res.json(toolsList);
+  } catch (error) {
+    console.error("Error loading tools:", error);
+    res.status(500).json({
+      error: "Failed to load tools",
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
+app.post("/call-tool", async (req, res) => {
+  try {
+    const { name, arguments: args } = req.body;
+
+    if (!name) {
+      res.status(400).json({ error: "Tool name is required" });
+      return;
+    }
+
+    // Load tools and find the requested tool
+    const tools = await loadTools();
+    const toolsMap = createToolsMap(tools);
+    const tool = toolsMap.get(name);
+
+    if (!tool) {
+      res.status(404).json({ error: `Tool '${name}' not found` });
+      return;
+    }
+
+    // Call the tool
+    const mcpRequest = {
+      params: {
+        name,
+        arguments: args || {}
+      }
+    };
+
+    const result = await tool.toolCall(mcpRequest);
+    res.json(result);
+  } catch (error) {
+    console.error(`Error calling tool:`, error);
+    res.status(500).json({
+      error: "Tool execution failed",
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+});
+
 // Create MCP server instance
 function createMcpServer(toolsMap: Map<string, any>): McpServer {
   const server = new McpServer({
