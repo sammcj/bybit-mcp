@@ -1,0 +1,119 @@
+/* Main CSS file - imports all styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@import './variables.css';
+@import './base.css';
+@import './components.css';
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-width-collapsed);
+  }
+  
+  .nav-label {
+    display: none;
+  }
+  
+  .header-content {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .logo h1 {
+    font-size: var(--font-size-lg);
+  }
+  
+  .version {
+    display: none;
+  }
+  
+  .chat-input-wrapper {
+    margin: 0 var(--spacing-md);
+  }
+  
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-controls {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: var(--header-height);
+    height: calc(100vh - var(--header-height));
+    z-index: var(--z-fixed);
+    transition: left var(--transition-normal);
+  }
+  
+  .sidebar.open {
+    left: 0;
+  }
+  
+  .content-area {
+    margin-left: 0;
+  }
+  
+  .example-queries {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: var(--spacing-md);
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .header-controls,
+  .chat-input-container {
+    display: none;
+  }
+  
+  .main-container {
+    height: auto;
+  }
+  
+  .content-area {
+    margin-left: 0;
+  }
+  
+  .chat-messages {
+    overflow: visible;
+    height: auto;
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .nav-item:hover,
+  .example-query:hover,
+  .theme-toggle:hover,
+  .settings-btn:hover {
+    outline: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion adjustments */
+@media (prefers-reduced-motion: reduce) {
+  .view {
+    transition: none;
+  }
+  
+  .modal,
+  .modal-content {
+    animation: none;
+  }
+  
+  .chat-message {
+    animation: none;
+  }
+}

@@ -11,18 +11,18 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "lightweight-charts": "^4.2.3",
+    "lightweight-charts": "^5.0.7",
     "chart.js": "^4.4.9",
     "chartjs-adapter-date-fns": "^3.0.0",
     "date-fns": "^4.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20.17.50",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.1",
+    "@types/node": "^22.15.21",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
+    "eslint": "^9.27.0",
     "typescript": "^5.8.3",
-    "vite": "^5.4.19"
+    "vite": "^6.3.5"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -38,5 +38,5 @@
     "vite"
   ],
   "author": "Sam McLeod",
-  "license": "MIT"
+ "license": "MIT"
 }
