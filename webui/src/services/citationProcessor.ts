@@ -20,22 +20,28 @@ export class CitationProcessor {
     // Reset regex lastIndex to ensure we find all matches
     CitationProcessor.CITATION_PATTERN.lastIndex = 0;
 
+    console.log('🔍 Processing message for citations:', content);
+
     // Find all citation patterns in the content
     while ((match = CitationProcessor.CITATION_PATTERN.exec(content)) !== null) {
       const fullMatch = match[0]; // e.g., "[REF001]"
       const referenceId = fullMatch; // Keep the full format for consistency
-      
+
       citations.push({
         referenceId,
         startIndex: match.index,
         endIndex: match.index + fullMatch.length,
         text: fullMatch
       });
+
+      console.log('📋 Found citation:', fullMatch, 'at position', match.index);
     }
 
     // Convert citation patterns to interactive elements
     if (citations.length > 0) {
+      console.log(`🔄 Converting ${citations.length} citations to interactive elements`);
       processedContent = this.convertCitationsToInteractive(content, citations);
+      console.log('✅ Processed content:', processedContent);
     }
 
     return {
@@ -50,24 +56,18 @@ export class CitationProcessor {
    */
   private convertCitationsToInteractive(content: string, citations: CitationReference[]): string {
     let processedContent = content;
-    
+
     // Process citations in reverse order to maintain correct indices
     const sortedCitations = [...citations].sort((a, b) => b.startIndex - a.startIndex);
 
     for (const citation of sortedCitations) {
       const citationData = citationStore.getCitation(citation.referenceId);
       const hasData = citationData !== undefined;
-      
-      const interactiveElement = `<span class="citation-ref ${hasData ? 'has-data' : 'no-data'}" 
-        data-reference-id="${citation.referenceId}" 
-        data-has-data="${hasData}"
-        title="${hasData ? 'Click to view data details' : 'Citation data not available'}"
-        role="button"
-        tabindex="0">
-        ${citation.text}
-      </span>`;
 
-      processedContent = 
+      // Create a more compact, single-line span element
+      const interactiveElement = `<span class="citation-ref ${hasData ? 'has-data' : 'no-data'}" data-reference-id="${citation.referenceId}" data-has-data="${hasData}" title="${hasData ? 'Click to view data details' : 'Citation data not available'}" role="button" tabindex="0">${citation.text}</span>`;
+
+      processedContent =
         processedContent.slice(0, citation.startIndex) +
         interactiveElement +
         processedContent.slice(citation.endIndex);
@@ -81,7 +81,7 @@ export class CitationProcessor {
    */
   getCitationTooltipData(referenceId: string): CitationTooltipData | null {
     const citationData = citationStore.getCitation(referenceId);
-    
+
     if (!citationData) {
       return null;
     }
@@ -113,7 +113,7 @@ export class CitationProcessor {
    */
   createTooltipContent(tooltipData: CitationTooltipData): string {
     const formattedTime = this.formatTimestamp(tooltipData.timestamp);
-    
+
     let metricsHtml = '';
     if (tooltipData.keyMetrics.length > 0) {
       metricsHtml = `
