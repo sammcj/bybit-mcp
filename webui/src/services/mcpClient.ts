@@ -141,25 +141,37 @@ export class MCPClient {
   }
 
   /**
-   * Call a specific MCP tool
+   * Call a specific MCP tool using HTTP
    */
   async callTool<T extends MCPToolName>(
     name: T,
     params: MCPToolParams<T>
   ): Promise<MCPToolResponse<T>> {
-    if (!this.client) {
-      throw new Error('MCP client not initialized');
-    }
-
     try {
-      const result = await this.client.callTool({
-        name: name as string,
-        arguments: params as Record<string, unknown>,
+      console.log(`🔧 Calling tool ${name} with params:`, params);
+
+      const response = await fetch(`${this.baseUrl}/call-tool`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name as string,
+          arguments: params as Record<string, unknown>,
+        }),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log(`✅ Tool ${name} result:`, result);
 
       return result as MCPToolResponse<T>;
     } catch (error) {
-      console.error(`Failed to call tool ${name}:`, error);
+      console.error(`❌ Failed to call tool ${name}:`, error);
       throw error;
     }
   }
