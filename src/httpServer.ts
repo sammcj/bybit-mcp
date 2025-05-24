@@ -97,6 +97,7 @@ app.post("/call-tool", async (req, res) => {
 
     // Call the tool
     const mcpRequest = {
+      method: "tools/call" as const,
       params: {
         name,
         arguments: args || {}
@@ -343,6 +344,8 @@ app.use((req, res) => {
     message: `Endpoint ${req.method} ${req.path} not found`,
     availableEndpoints: [
       "GET /health - Health check",
+      "GET /tools - List available tools",
+      "POST /call-tool - Execute a tool",
       "POST /mcp - Modern Streamable HTTP transport",
       "GET /mcp - Server-to-client notifications",
       "DELETE /mcp - Session termination",
