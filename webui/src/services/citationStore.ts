@@ -14,7 +14,7 @@ export class CitationStore {
    */
   storeCitation(data: CitationData): void {
     this.citations.set(data.referenceId, data);
-    
+
     // Clean up old citations if we exceed the limit
     if (this.citations.size > this.maxCitations) {
       this.cleanupOldCitations();
@@ -165,14 +165,23 @@ export class CitationStore {
    * Process tool response and store citation if it has reference metadata
    */
   processToolResponse(toolResponse: any): void {
+    console.log('🔍 Processing tool response for citations:', toolResponse);
+
     if (!toolResponse || typeof toolResponse !== 'object') {
+      console.log('❌ Invalid tool response format');
       return;
     }
 
     // Check if response has reference metadata
     if (toolResponse._referenceId && toolResponse._timestamp && toolResponse._toolName) {
+      console.log('✅ Found reference metadata:', {
+        referenceId: toolResponse._referenceId,
+        toolName: toolResponse._toolName,
+        timestamp: toolResponse._timestamp
+      });
+
       const extractedMetrics = this.extractMetrics(toolResponse._toolName, toolResponse);
-      
+
       const citationData: CitationData = {
         referenceId: toolResponse._referenceId,
         timestamp: toolResponse._timestamp,
@@ -183,7 +192,9 @@ export class CitationStore {
       };
 
       this.storeCitation(citationData);
-      console.log(`📋 Stored citation ${toolResponse._referenceId} for ${toolResponse._toolName}`);
+      console.log('📋 Stored citation data for', toolResponse._referenceId);
+    } else {
+      console.log('❌ No reference metadata found in tool response');
     }
   }
 
@@ -201,7 +212,7 @@ export class CitationStore {
       }
     }
 
-    console.log(`🧹 Cleaned up old citations. Current count: ${this.citations.size}`);
+    // Cleanup completed silently
   }
 
   /**

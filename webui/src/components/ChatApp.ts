@@ -409,23 +409,15 @@ export class ChatApp {
 
 
   private formatMessageContent(content: string): string {
-    console.log('📝 Formatting message content:', content);
-
     // Process citations first
     const processedMessage = citationProcessor.processMessage(content);
 
-    console.log('📝 After citation processing:', processedMessage.processedContent);
-
     // Basic markdown-like formatting on the processed content
-    const formatted = processedMessage.processedContent
+    return processedMessage.processedContent
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code>$1</code>')
       .replace(/\n/g, '<br>');
-
-    console.log('📝 Final formatted content:', formatted);
-
-    return formatted;
   }
 
   /**
