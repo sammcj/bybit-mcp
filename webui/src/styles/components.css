@@ -276,6 +276,155 @@
   margin-right: 2.5rem;
 }
 
+/* Markdown content styling */
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+  margin: var(--spacing-md) 0 var(--spacing-sm) 0;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.message-content h1 { font-size: var(--font-size-xl); }
+.message-content h2 { font-size: var(--font-size-lg); }
+.message-content h3 { font-size: var(--font-size-md); }
+.message-content h4,
+.message-content h5,
+.message-content h6 { font-size: var(--font-size-base); }
+
+.message-content p {
+  margin: var(--spacing-sm) 0;
+  line-height: 1.6;
+}
+
+.message-content ul,
+.message-content ol {
+  margin: var(--spacing-sm) 0;
+  padding-left: var(--spacing-lg);
+}
+
+.message-content li {
+  margin: var(--spacing-xs) 0;
+  line-height: 1.5;
+}
+
+.message-content blockquote {
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-left: 3px solid var(--color-primary);
+  background-color: var(--bg-tertiary);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-style: italic;
+}
+
+.message-content code {
+  background-color: var(--bg-tertiary);
+  padding: 0.125rem 0.25rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--text-primary);
+}
+
+.message-content pre {
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-md);
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  border: 1px solid var(--border-primary);
+}
+
+.message-content pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: var(--font-size-sm);
+}
+
+.message-content table {
+  width: 100%;
+  margin: var(--spacing-md) 0;
+  border-collapse: collapse;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.message-content th,
+.message-content td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.message-content th {
+  background-color: var(--bg-tertiary);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.message-content tr:last-child td {
+  border-bottom: none;
+}
+
+.message-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  transition: color var(--transition-fast);
+}
+
+.message-content a:hover {
+  color: var(--color-primary-hover);
+}
+
+.message-content hr {
+  margin: var(--spacing-lg) 0;
+  border: none;
+  border-top: 1px solid var(--border-primary);
+}
+
+/* User message markdown overrides */
+.message-content.user h1,
+.message-content.user h2,
+.message-content.user h3,
+.message-content.user h4,
+.message-content.user h5,
+.message-content.user h6 {
+  color: var(--text-inverse);
+}
+
+.message-content.user code {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-inverse);
+}
+
+.message-content.user pre {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.message-content.user blockquote {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--text-inverse);
+}
+
+.message-content.user a {
+  color: var(--text-inverse);
+}
+
+.message-content.user th {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-inverse);
+}
+
+.message-content.user hr {
+  border-top-color: rgba(255, 255, 255, 0.3);
+}
+
 
 
 /* Chat Input */

@@ -10,6 +10,7 @@ import { mcpClient } from '@/services/mcpClient';
 import { configService } from '@/services/configService';
 import { citationProcessor } from '@/services/citationProcessor';
 import type { WorkflowEvent } from '@/types/workflow';
+import { marked } from 'marked';
 
 export class ChatApp {
   private state: ChatState = {
@@ -31,6 +32,11 @@ export class ChatApp {
   private citationAttachThrottle: number = 300; // Throttle to 300ms
 
   constructor() {
+    // Configure marked for safe HTML rendering
+    marked.setOptions({
+      breaks: true, // Convert line breaks to <br>
+      gfm: true, // GitHub Flavored Markdown
+    });
     // Get DOM elements
     this.chatMessages = document.getElementById('chat-messages')!;
     this.chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
@@ -431,12 +437,34 @@ export class ChatApp {
     // Process citations first
     const processedMessage = citationProcessor.processMessage(content);
 
-    // Basic markdown-like formatting on the processed content
-    return processedMessage.processedContent
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      .replace(/\n/g, '<br>');
+    try {
+      // Use marked to render markdown to HTML (synchronous)
+      const htmlContent = marked.parse(processedMessage.processedContent, { async: false }) as string;
+
+      // Basic sanitization - remove potentially dangerous elements
+      return this.sanitizeHtml(htmlContent);
+    } catch (error) {
+      console.warn('Failed to parse markdown, falling back to basic formatting:', error);
+
+      // Fallback to basic formatting if marked fails
+      return processedMessage.processedContent
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+    }
+  }
+
+  /**
+   * Basic HTML sanitization to remove potentially dangerous elements
+   */
+  private sanitizeHtml(html: string): string {
+    // Remove script tags and event handlers
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '')
+      .replace(/on\w+='[^']*'/gi, '')
+      .replace(/javascript:/gi, '');
   }
 
 
