@@ -402,7 +402,12 @@ export class ChatApp {
 
     // Add citation event listeners if this is an assistant message
     if (message.role === 'assistant') {
-      this.addCitationEventListeners(messageElement);
+      console.log(`🎯 Assistant message detected, will add citation listeners`);
+      // Use setTimeout to ensure DOM is fully updated
+      setTimeout(() => {
+        console.log(`🎯 About to add citation listeners to message element`);
+        this.addCitationEventListeners(messageElement);
+      }, 0);
     }
   }
 

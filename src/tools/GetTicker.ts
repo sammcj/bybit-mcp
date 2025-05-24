@@ -129,18 +129,9 @@ class GetTicker extends BaseToolImplementation {
         ask1Size: ticker.ask1Size
       }
 
-      // Add spot-specific fields if applicable
-      let finalResult = baseResult
-      if (category === "spot" && "usdIndexPrice" in ticker) {
-        finalResult = {
-          ...baseResult,
-          usdIndexPrice: ticker.usdIndexPrice
-        }
-      }
-
       // Add reference metadata if requested
       const resultWithMetadata = this.addReferenceMetadata(
-        finalResult,
+        baseResult,
         includeReferenceId,
         this.name,
         `/v5/market/tickers`
