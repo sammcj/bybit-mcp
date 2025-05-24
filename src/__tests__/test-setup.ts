@@ -34,6 +34,9 @@ afterEach(() => {
 
   // Clear any timers
   jest.clearAllTimers()
+
+  // Clear any active timeouts from tools
+  jest.runOnlyPendingTimers()
 })
 
 // Handle unhandled promise rejections
