@@ -239,12 +239,12 @@ export class ChatApp {
         (chunk: string) => {
           // Update the streaming message content
           assistantMessage.content += chunk;
-          contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '') + '<span class="cursor">|</span>';
+          contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '', true) + '<span class="cursor">|</span>';
 
           // Only attach citation listeners if the content contains citation patterns
           // This avoids excessive listener attachment during streaming
           if (assistantMessage.content && assistantMessage.content.includes('[REF') && messageElement) {
-            this.addCitationEventListenersThrottled(messageElement);
+            this.addCitationEventListenersThrottled(messageElement as HTMLElement);
           }
 
           this.scrollToBottom();
@@ -257,11 +257,11 @@ export class ChatApp {
 
       // Remove streaming cursor and finalize
       assistantMessage.isStreaming = false;
-      contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '');
+      contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '', false);
 
       // Final citation event listener attachment - always do this at the end
       if (messageElement) {
-        this.addCitationEventListeners(messageElement);
+        this.addCitationEventListeners(messageElement as HTMLElement);
       }
 
     } catch (error) {
@@ -427,12 +427,15 @@ export class ChatApp {
 
 
 
-  private formatMessageContent(content: string): string {
+  private formatMessageContent(content: string, isStreaming: boolean = false): string {
     // Process citations first
     const processedMessage = citationProcessor.processMessage(content);
 
-    // Process markdown tables first (before line breaks and other formatting)
-    let formattedContent = this.processMarkdownTables(processedMessage.processedContent);
+    // Only process tables when not streaming to avoid performance issues
+    let formattedContent = processedMessage.processedContent;
+    if (!isStreaming) {
+      formattedContent = this.processMarkdownTables(formattedContent);
+    }
 
     // Basic markdown-like formatting on the processed content
     // Note: Apply line breaks last to avoid breaking table structure
@@ -497,7 +500,7 @@ export class ChatApp {
     // Then handle standalone tables - improved regex to be more flexible
     const tableRegex = /(?:^|\n)((?:\s*\|[^\n]*\|\s*\n)+)/gm;
 
-    content = content.replace(tableRegex, (match, tableContent) => {
+    content = content.replace(tableRegex, (_match, tableContent) => {
       const result = this.convertTableToHtml(tableContent);
       return result;
     });
@@ -602,7 +605,7 @@ export class ChatApp {
       console.log(`🎯 Attaching listeners to ${citationRefs.length} citation references`);
     }
 
-    citationRefs.forEach((citationRef, index) => {
+    citationRefs.forEach((citationRef) => {
       const element = citationRef as HTMLElement;
       const referenceId = element.dataset.referenceId;
 
