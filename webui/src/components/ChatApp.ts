@@ -239,7 +239,7 @@ export class ChatApp {
         (chunk: string) => {
           // Update the streaming message content
           assistantMessage.content += chunk;
-          contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '', true) + '<span class="cursor">|</span>';
+          contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '') + '<span class="cursor">|</span>';
 
           // Only attach citation listeners if the content contains citation patterns
           // This avoids excessive listener attachment during streaming
@@ -257,7 +257,7 @@ export class ChatApp {
 
       // Remove streaming cursor and finalize
       assistantMessage.isStreaming = false;
-      contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '', false);
+      contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '');
 
       // Final citation event listener attachment - always do this at the end
       if (messageElement) {
@@ -427,160 +427,19 @@ export class ChatApp {
 
 
 
-  private formatMessageContent(content: string, isStreaming: boolean = false): string {
+  private formatMessageContent(content: string): string {
     // Process citations first
     const processedMessage = citationProcessor.processMessage(content);
 
-    // Only process tables when not streaming to avoid performance issues
-    let formattedContent = processedMessage.processedContent;
-    if (!isStreaming) {
-      formattedContent = this.processMarkdownTables(formattedContent);
-    }
-
     // Basic markdown-like formatting on the processed content
-    // Note: Apply line breaks last to avoid breaking table structure
-    formattedContent = formattedContent
+    return processedMessage.processedContent
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>');
-
-    // Apply line breaks last, but preserve table HTML
-    // Don't convert newlines inside table tags to <br>
-    return this.preserveTableStructure(formattedContent);
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
   }
 
-  /**
-   * Preserve table structure while converting newlines to <br> tags
-   */
-  private preserveTableStructure(content: string): string {
-    // Split content by table tags to process separately
-    const parts: string[] = [];
-    let currentIndex = 0;
 
-    // Find all table elements
-    const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/g;
-    let match;
-
-    while ((match = tableRegex.exec(content)) !== null) {
-      // Add content before table (with line breaks converted)
-      const beforeTable = content.slice(currentIndex, match.index);
-      parts.push(beforeTable.replace(/\n/g, '<br>'));
-
-      // Add table as-is (preserve structure)
-      parts.push(match[0]);
-
-      currentIndex = match.index + match[0].length;
-    }
-
-    // Add remaining content after last table
-    const afterTables = content.slice(currentIndex);
-    parts.push(afterTables.replace(/\n/g, '<br>'));
-
-    return parts.join('');
-  }
-
-  /**
-   * Process markdown tables and convert them to HTML
-   */
-  private processMarkdownTables(content: string): string {
-    // Only process if content looks like it might contain a complete table
-    if (!content.includes('|') || !content.includes('-') || content.length < 50) {
-      return content;
-    }
-
-    // First, handle tables inside code blocks (```markdown or ``` with table content)
-    content = content.replace(/```(?:markdown)?\s*\n([\s\S]*?)\n```/g, (match, tableContent) => {
-      // Check if the content contains a table
-      if (tableContent.includes('|') && tableContent.includes('-')) {
-        return this.convertTableToHtml(tableContent);
-      }
-      return match; // Return original if not a table
-    });
-
-    // Then handle standalone tables - improved regex to be more flexible
-    const tableRegex = /(?:^|\n)((?:\s*\|[^\n]*\|\s*\n)+)/gm;
-
-    content = content.replace(tableRegex, (_match, tableContent) => {
-      const result = this.convertTableToHtml(tableContent);
-      return result;
-    });
-
-    return content;
-  }
-
-  /**
-   * Convert table content to HTML
-   */
-  private convertTableToHtml(tableContent: string): string {
-    const lines = tableContent.trim().split('\n');
-
-    if (lines.length < 2) {
-      return tableContent;
-    }
-
-    // Check if second line is a separator (contains dashes and pipes)
-    const separatorLine = lines[1];
-    if (!separatorLine.includes('-') || !separatorLine.includes('|')) {
-      return tableContent;
-    }
-
-    // Parse header row
-    const headerCells = this.parseTableRow(lines[0]);
-    if (headerCells.length === 0) {
-      return tableContent;
-    }
-
-    // Parse data rows (skip separator line)
-    const dataRows = lines.slice(2).map(line => this.parseTableRow(line)).filter(row => row.length > 0);
-
-    // Generate HTML table
-    let tableHtml = '<table class="markdown-table">';
-
-    // Header
-    tableHtml += '<thead><tr>';
-    headerCells.forEach(cell => {
-      tableHtml += `<th>${cell.trim()}</th>`;
-    });
-    tableHtml += '</tr></thead>';
-
-    // Body
-    if (dataRows.length > 0) {
-      tableHtml += '<tbody>';
-      dataRows.forEach(row => {
-        tableHtml += '<tr>';
-        row.forEach((cell, index) => {
-          // Pad with empty cells if row is shorter than header
-          const cellContent = index < row.length ? cell.trim() : '';
-          tableHtml += `<td>${cellContent}</td>`;
-        });
-        // Add empty cells if row is shorter than header
-        for (let i = row.length; i < headerCells.length; i++) {
-          tableHtml += '<td></td>';
-        }
-        tableHtml += '</tr>';
-      });
-      tableHtml += '</tbody>';
-    }
-
-    tableHtml += '</table>';
-    console.log('✅ Successfully converted markdown table to HTML');
-    return tableHtml;
-  }
-
-  /**
-   * Parse a table row and extract cells
-   */
-  private parseTableRow(line: string): string[] {
-    // Remove leading/trailing pipes and split by pipes
-    const trimmed = line.trim();
-    if (!trimmed.startsWith('|') || !trimmed.endsWith('|')) {
-      return [];
-    }
-
-    // Remove leading and trailing pipes, then split
-    const content = trimmed.slice(1, -1);
-    return content.split('|');
-  }
 
   /**
    * Throttled version of addCitationEventListeners to reduce spam during streaming
