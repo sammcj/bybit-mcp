@@ -492,9 +492,6 @@ export class ChatApp {
         }
       });
 
-      // Mark as having listeners attached
-      element.dataset.listenersAttached = 'true';
-
       console.log(`✅ Event listeners attached for citation: ${referenceId}`);
     });
   }
