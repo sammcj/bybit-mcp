@@ -13,19 +13,22 @@ import { z } from "zod"
 
 type ToolCallRequest = z.infer<typeof CallToolRequestSchema>
 
+// Create mock client methods
+const mockClient = {
+  getTickers: jest.fn(),
+  getOrderbook: jest.fn(),
+  getPositions: jest.fn(),
+  getWalletBalance: jest.fn(),
+  getInstruments: jest.fn(),
+  getKline: jest.fn(),
+  getMarkets: jest.fn(),
+  getHistoricOrders: jest.fn(),
+  getTrades: jest.fn(),
+}
+
 // Mock the Bybit API client
 jest.mock('bybit-api', () => ({
-  RestClientV5: jest.fn().mockImplementation(() => ({
-    getTickers: jest.fn(),
-    getOrderbook: jest.fn(),
-    getPositions: jest.fn(),
-    getWalletBalance: jest.fn(),
-    getInstruments: jest.fn(),
-    getKline: jest.fn(),
-    getMarkets: jest.fn(),
-    getHistoricOrders: jest.fn(),
-    getTrades: jest.fn(),
-  })),
+  RestClientV5: jest.fn().mockImplementation(() => mockClient),
   APIResponseV3WithTime: jest.fn(),
 }))
 
@@ -95,7 +98,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getTicker as any).client.getTickers.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getTickers.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getTicker.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -113,7 +116,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getTicker as any).client.getTickers.mockResolvedValueOnce(mockErrorResponse)
+      mockClient.getTickers.mockResolvedValueOnce(mockErrorResponse)
 
       const result = await getTicker.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -161,7 +164,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getOrderbook as any).client.getOrderbook.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getOrderbook.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getOrderbook.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -204,7 +207,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getPositions as any).client.getPositions.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getPositions.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getPositions.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -247,7 +250,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getWalletBalance as any).client.getWalletBalance.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getWalletBalance.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getWalletBalance.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -304,7 +307,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getInstrumentInfo as any).client.getInstruments.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getInstruments.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getInstrumentInfo.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -331,7 +334,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getKline as any).client.getKline.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getKline.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getKline.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -356,7 +359,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getMarketInfo as any).client.getMarkets.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getMarkets.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getMarketInfo.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -381,7 +384,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getOrderHistory as any).client.getHistoricOrders.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getHistoricOrders.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getOrderHistory.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -407,7 +410,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (getTrades as any).client.getTrades.mockResolvedValueOnce(mockSuccessResponse)
+      mockClient.getTrades.mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getTrades.toolCall(request)
       expect(result.content[0].type).toBe('text')

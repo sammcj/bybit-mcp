@@ -34,3 +34,6 @@ coverage/
 *.tsbuildinfo
 
 !.env.example
+
+pinescripts
+DEV_PLAN.md

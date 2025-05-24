@@ -11,7 +11,13 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        isolatedModules: true,
       },
     ],
   },
+  testTimeout: 30000,
+  maxWorkers: 1,
+  forceExit: true,
+  detectOpenHandles: true,
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
 };
