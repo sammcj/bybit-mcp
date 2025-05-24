@@ -21,7 +21,7 @@ This MCP server provides the following tools for interacting with Bybit's API:
 - `get_order_history`: Get order history for the authenticated user
 - `get_ml_rsi`: Get machine learning-based RSI (Relative Strength Index) for a trading pair
 - `get_market_structure`: Get market structure information for a trading pair
-- `get_order_blocks`: Get order block information for a trading pair
+- `get_order_blocks`: Detect institutional order accumulation zones
 - `get_order_history`: Get order history for the authenticated user
 - `get_orderbook`: Get orderbook (market depth) data for a trading pair
 - `get_ticker`: Get real-time ticker information for a trading pair
