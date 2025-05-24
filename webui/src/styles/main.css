@@ -1,42 +1,45 @@
 /* Main CSS file - imports all styles */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* TODO: download and serve from local */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* TODO: download and serve from local */
 
 @import './variables.css';
 @import './base.css';
 @import './components.css';
+@import './citations.css';
 
 /* Responsive design */
 @media (max-width: 768px) {
   .sidebar {
     width: var(--sidebar-width-collapsed);
   }
-  
+
   .nav-label {
     display: none;
   }
-  
+
   .header-content {
     padding: 0 var(--spacing-md);
   }
-  
+
   .logo h1 {
     font-size: var(--font-size-lg);
   }
-  
+
   .version {
     display: none;
   }
-  
+
   .chat-input-wrapper {
     margin: 0 var(--spacing-md);
   }
-  
+
   .chart-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .chart-controls {
     flex-wrap: wrap;
   }
@@ -51,19 +54,19 @@
     z-index: var(--z-fixed);
     transition: left var(--transition-normal);
   }
-  
+
   .sidebar.open {
     left: 0;
   }
-  
+
   .content-area {
     margin-left: 0;
   }
-  
+
   .example-queries {
     padding: 0 var(--spacing-md);
   }
-  
+
   .modal-content {
     width: 95%;
     margin: var(--spacing-md);
@@ -77,15 +80,15 @@
   .chat-input-container {
     display: none;
   }
-  
+
   .main-container {
     height: auto;
   }
-  
+
   .content-area {
     margin-left: 0;
   }
-  
+
   .chat-messages {
     overflow: visible;
     height: auto;
@@ -107,12 +110,12 @@
   .view {
     transition: none;
   }
-  
+
   .modal,
   .modal-content {
     animation: none;
   }
-  
+
   .chat-message {
     animation: none;
   }
