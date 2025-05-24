@@ -237,6 +237,7 @@ class App {
     if (closeSettings && settingsModal) {
       closeSettings.addEventListener('click', () => {
         settingsModal.classList.add('hidden');
+        settingsModal.classList.remove('active');
       });
     }
 
@@ -251,6 +252,7 @@ class App {
       settingsModal.addEventListener('click', (event) => {
         if (event.target === settingsModal) {
           settingsModal.classList.add('hidden');
+          settingsModal.classList.remove('active');
         }
       });
     }
@@ -331,6 +333,7 @@ class App {
     }
 
     modal.classList.remove('hidden');
+    modal.classList.add('active');
   }
 
   private saveSettingsFromModal(): void {
@@ -412,6 +415,7 @@ class App {
     const modal = document.getElementById('settings-modal');
     if (modal) {
       modal.classList.add('hidden');
+      modal.classList.remove('active');
     }
   }
 
@@ -497,6 +501,7 @@ class App {
   private closeAllModals(): void {
     document.querySelectorAll('.modal').forEach(modal => {
       modal.classList.add('hidden');
+      modal.classList.remove('active');
     });
   }
 

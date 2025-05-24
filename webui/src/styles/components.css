@@ -919,6 +919,14 @@
   display: flex; /* Show when active */
 }
 
+.modal:not(.hidden) {
+  display: flex; /* Show when not hidden */
+}
+
+.modal.hidden {
+  display: none !important; /* Force hide when hidden class is present */
+}
+
 .modal-content {
   background-color: var(--bg-elevated);
   border-radius: var(--radius-xl);
