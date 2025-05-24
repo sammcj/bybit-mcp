@@ -1,0 +1,23 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="#2563eb"/>
+  
+  <!-- Chart bars representing trading -->
+  <rect x="6" y="20" width="2" height="6" fill="white" opacity="0.9"/>
+  <rect x="10" y="16" width="2" height="10" fill="white" opacity="0.9"/>
+  <rect x="14" y="12" width="2" height="14" fill="white" opacity="0.9"/>
+  <rect x="18" y="8" width="2" height="18" fill="white" opacity="0.9"/>
+  <rect x="22" y="14" width="2" height="12" fill="white" opacity="0.9"/>
+  <rect x="26" y="18" width="2" height="8" fill="white" opacity="0.9"/>
+  
+  <!-- Trend line -->
+  <path d="M6 22 L10 18 L14 14 L18 10 L22 16 L26 20" stroke="white" stroke-width="1.5" fill="none" opacity="0.8"/>
+  
+  <!-- Small dots at data points -->
+  <circle cx="6" cy="22" r="1" fill="white"/>
+  <circle cx="10" cy="18" r="1" fill="white"/>
+  <circle cx="14" cy="14" r="1" fill="white"/>
+  <circle cx="18" cy="10" r="1" fill="white"/>
+  <circle cx="22" cy="16" r="1" fill="white"/>
+  <circle cx="26" cy="20" r="1" fill="white"/>
+</svg>

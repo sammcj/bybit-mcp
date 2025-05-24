@@ -52,7 +52,7 @@ export class MCPClient {
    */
   async listTools(): Promise<MCPTool[]> {
     const response = await this.makeRequest('tools/list', {});
-    this.tools = response.result?.tools || [];
+    this.tools = (response.result as any)?.tools || [];
     return this.tools;
   }
 
@@ -106,7 +106,7 @@ export class MCPClient {
           toolCall.name as MCPToolName,
           toolCall.arguments as any
         );
-        
+
         results.push({
           content: [{
             type: 'text',
@@ -159,7 +159,7 @@ export class MCPClient {
       }
 
       const data = await response.json();
-      
+
       if (!this.isValidMCPResponse(data)) {
         throw new Error('Invalid MCP response format');
       }
@@ -167,14 +167,14 @@ export class MCPClient {
       return data;
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           throw new Error('Request timeout');
         }
         throw error;
       }
-      
+
       throw new Error('Unknown error occurred');
     }
   }
@@ -228,7 +228,7 @@ export class MCPClient {
 export const mcpClient = new MCPClient();
 
 // Convenience functions for common operations
-export async function getTicker(symbol: string, category?: string) {
+export async function getTicker(symbol: string, category?: 'spot' | 'linear' | 'inverse' | 'option') {
   return mcpClient.callTool('get_ticker', { symbol, category });
 }
 
@@ -236,18 +236,18 @@ export async function getKlineData(symbol: string, interval?: string, limit?: nu
   return mcpClient.callTool('get_kline', { symbol, interval, limit });
 }
 
-export async function getOrderbook(symbol: string, category?: string, limit?: number) {
+export async function getOrderbook(symbol: string, category?: 'spot' | 'linear' | 'inverse' | 'option', limit?: number) {
   return mcpClient.callTool('get_orderbook', { symbol, category, limit });
 }
 
-export async function getMLRSI(symbol: string, category: string, interval: string, options?: Partial<MCPToolParams<'get_ml_rsi'>>) {
+export async function getMLRSI(symbol: string, category: 'spot' | 'linear' | 'inverse' | 'option', interval: string, options?: Partial<MCPToolParams<'get_ml_rsi'>>) {
   return mcpClient.callTool('get_ml_rsi', { symbol, category, interval, ...options });
 }
 
-export async function getOrderBlocks(symbol: string, category: string, interval: string, options?: Partial<MCPToolParams<'get_order_blocks'>>) {
+export async function getOrderBlocks(symbol: string, category: 'spot' | 'linear' | 'inverse' | 'option', interval: string, options?: Partial<MCPToolParams<'get_order_blocks'>>) {
   return mcpClient.callTool('get_order_blocks', { symbol, category, interval, ...options });
 }
 
-export async function getMarketStructure(symbol: string, category: string, interval: string, options?: Partial<MCPToolParams<'get_market_structure'>>) {
+export async function getMarketStructure(symbol: string, category: 'spot' | 'linear' | 'inverse' | 'option', interval: string, options?: Partial<MCPToolParams<'get_market_structure'>>) {
   return mcpClient.callTool('get_market_structure', { symbol, category, interval, ...options });
 }
