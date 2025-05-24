@@ -122,16 +122,22 @@ export class AIClient implements AIService {
    * Execute tool calls and return results
    */
   async executeToolCalls(toolCalls: any[]): Promise<any[]> {
+    console.log('🔧 Executing tool calls:', toolCalls.length);
     const results = [];
 
     for (const toolCall of toolCalls) {
       try {
+        console.log('🔧 Processing tool call:', toolCall);
         const { function: func } = toolCall;
+
         // Parse arguments if they're a string (from Ollama format)
         const args = typeof func.arguments === 'string'
           ? JSON.parse(func.arguments)
           : func.arguments;
+
+        console.log(`🔧 Calling tool ${func.name} with args:`, args);
         const result = await mcpClient.callTool(func.name, args);
+        console.log(`✅ Tool ${func.name} result:`, result);
 
         results.push({
           tool_call_id: toolCall.id,
@@ -139,6 +145,7 @@ export class AIClient implements AIService {
           content: JSON.stringify(result, null, 2),
         });
       } catch (error) {
+        console.error(`❌ Tool execution failed for ${toolCall.function?.name}:`, error);
         results.push({
           tool_call_id: toolCall.id,
           role: 'tool',
@@ -147,6 +154,7 @@ export class AIClient implements AIService {
       }
     }
 
+    console.log('🔧 Tool execution results:', results);
     return results;
   }
 
@@ -182,7 +190,7 @@ export class AIClient implements AIService {
         }
 
         toolCalls.push({
-          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `call_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
           type: 'function',
           function: {
             name: functionName,
