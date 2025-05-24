@@ -31,12 +31,9 @@ afterAll(() => {
 afterEach(() => {
   // Clear all mocks
   jest.clearAllMocks()
-  
+
   // Clear any timers
   jest.clearAllTimers()
-  
-  // Reset modules to ensure clean state
-  jest.resetModules()
 })
 
 // Handle unhandled promise rejections
@@ -60,6 +57,14 @@ export const createMockResponse = (data: any, success: boolean = true) => {
   }
 }
 
+// Mock crypto.randomUUID globally
+const mockRandomUUID = jest.fn(() => '123e4567-e89b-12d3-a456-426614174000')
+global.crypto = {
+  ...global.crypto,
+  randomUUID: mockRandomUUID,
+} as Crypto
+
+// Helper to create mock tool call requests
 export const createMockRequest = (name: string, arguments_: any) => {
   return {
     method: "tools/call" as const,

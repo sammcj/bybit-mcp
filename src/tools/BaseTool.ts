@@ -67,21 +67,28 @@ export abstract class BaseToolImplementation {
   private requestHistory: number[] = [] // Timestamps of requests within the last minute
   private initialized = false
 
-  constructor() {
-    const config = getEnvConfig()
-    this.isDevMode = !config.apiKey || !config.apiSecret
-
-    if (this.isDevMode) {
-      this.client = new RestClientV5({
-        testnet: true,
-      })
+  constructor(mockClient?: RestClientV5) {
+    if (mockClient) {
+      // Use provided mock client for testing
+      this.client = mockClient
+      this.isDevMode = true
     } else {
-      this.client = new RestClientV5({
-        key: config.apiKey,
-        secret: config.apiSecret,
-        testnet: config.useTestnet,
-        recv_window: 5000, // 5 second receive window
-      })
+      // Normal production/development initialization
+      const config = getEnvConfig()
+      this.isDevMode = !config.apiKey || !config.apiSecret
+
+      if (this.isDevMode) {
+        this.client = new RestClientV5({
+          testnet: true,
+        })
+      } else {
+        this.client = new RestClientV5({
+          key: config.apiKey,
+          secret: config.apiSecret,
+          testnet: config.useTestnet,
+          recv_window: 5000, // 5 second receive window
+        })
+      }
     }
   }
 

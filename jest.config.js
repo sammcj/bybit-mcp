@@ -11,7 +11,6 @@ export default {
       'ts-jest',
       {
         useESM: true,
-        isolatedModules: true,
       },
     ],
   },
@@ -19,5 +18,16 @@ export default {
   maxWorkers: 1,
   forceExit: true,
   detectOpenHandles: true,
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/test-setup.ts'],
+  testPathIgnorePatterns: [
+    '<rootDir>/build/',
+    '<rootDir>/node_modules/',
+    '<rootDir>/src/__tests__/test-setup.ts'
+  ],
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/__tests__/**',
+    '!src/index.ts'
+  ]
 };

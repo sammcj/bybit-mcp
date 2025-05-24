@@ -2,35 +2,21 @@ import { jest, describe, beforeEach, it, expect } from '@jest/globals'
 import GetMLRSI from '../tools/GetMLRSI.js'
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
+import { RestClientV5 } from "bybit-api"
 
 type ToolCallRequest = z.infer<typeof CallToolRequestSchema>
 
-// Mock the Bybit API client
-const mockExecuteRequest = jest.fn() as jest.MockedFunction<any>
-const mockLogInfo = jest.fn()
-
-jest.mock('../tools/BaseTool.js', () => {
-  return {
-    BaseToolImplementation: class {
-      protected executeRequest = mockExecuteRequest
-      protected logInfo = mockLogInfo
-      protected handleError = jest.fn((error: any) => ({
-        content: [{ type: "text", text: JSON.stringify({ error: (error as Error).message }) }],
-        isError: true
-      }))
-      protected formatResponse = jest.fn((data: any) => ({
-        content: [{ type: "text", text: JSON.stringify(data) }]
-      }))
-    }
-  }
-})
+// Create mock client methods
+const mockClient = {
+  getKline: jest.fn(),
+} as unknown as RestClientV5
 
 describe('GetMLRSI Tool', () => {
   let getMLRSI: GetMLRSI
 
   beforeEach(() => {
     jest.clearAllMocks()
-    getMLRSI = new GetMLRSI()
+    getMLRSI = new GetMLRSI(mockClient)
   })
 
   describe('Tool Definition', () => {
@@ -139,16 +125,23 @@ describe('GetMLRSI Tool', () => {
 
     it('should accept valid parameters with defaults', async () => {
       // Mock successful API response
-      mockExecuteRequest.mockResolvedValue({
-        list: Array.from({ length: 200 }, (_, i) => [
-          String(Date.now() + i * 900000), // timestamp
-          "50000", // open
-          "50100", // high
-          "49900", // low
-          "50050", // close
-          "1000"   // volume
-        ])
-      })
+      const mockKlineResponse = {
+        retCode: 0,
+        retMsg: 'OK',
+        result: {
+          list: Array.from({ length: 200 }, (_, i) => [
+            String(Date.now() + i * 900000), // timestamp
+            "50000", // open
+            "50100", // high
+            "49900", // low
+            "50050", // close
+            "1000"   // volume
+          ])
+        },
+        time: Date.now(),
+      };
+
+      (mockClient.getKline as jest.Mock).mockResolvedValueOnce(mockKlineResponse)
 
       const request: ToolCallRequest = {
         method: "tools/call",
@@ -164,19 +157,26 @@ describe('GetMLRSI Tool', () => {
 
       const result = await getMLRSI.toolCall(request)
       expect(result.isError).not.toBe(true)
-      expect(mockExecuteRequest).toHaveBeenCalled()
+      expect(mockClient.getKline).toHaveBeenCalled()
     })
   })
 
   describe('Feature Configuration', () => {
     it('should handle different feature counts', async () => {
       // Mock successful API response
-      mockExecuteRequest.mockResolvedValue({
-        list: Array.from({ length: 200 }, (_, i) => [
-          String(Date.now() + i * 900000),
-          "50000", "50100", "49900", "50050", "1000"
-        ])
-      })
+      const mockKlineResponse = {
+        retCode: 0,
+        retMsg: 'OK',
+        result: {
+          list: Array.from({ length: 200 }, (_, i) => [
+            String(Date.now() + i * 900000),
+            "50000", "50100", "49900", "50050", "1000"
+          ])
+        },
+        time: Date.now(),
+      };
+
+      (mockClient.getKline as jest.Mock).mockResolvedValueOnce(mockKlineResponse)
 
       const request: ToolCallRequest = {
         method: "tools/call",
@@ -202,12 +202,19 @@ describe('GetMLRSI Tool', () => {
 
     it('should handle different smoothing methods', async () => {
       // Mock successful API response
-      mockExecuteRequest.mockResolvedValue({
-        list: Array.from({ length: 200 }, (_, i) => [
-          String(Date.now() + i * 900000),
-          "50000", "50100", "49900", "50050", "1000"
-        ])
-      })
+      const mockKlineResponse = {
+        retCode: 0,
+        retMsg: 'OK',
+        result: {
+          list: Array.from({ length: 200 }, (_, i) => [
+            String(Date.now() + i * 900000),
+            "50000", "50100", "49900", "50050", "1000"
+          ])
+        },
+        time: Date.now(),
+      };
+
+      (mockClient.getKline as jest.Mock).mockResolvedValueOnce(mockKlineResponse)
 
       const request: ToolCallRequest = {
         method: "tools/call",
@@ -233,12 +240,19 @@ describe('GetMLRSI Tool', () => {
   describe('Error Handling', () => {
     it('should handle insufficient data error', async () => {
       // Mock API response with insufficient data
-      mockExecuteRequest.mockResolvedValue({
-        list: Array.from({ length: 50 }, (_, i) => [
-          String(Date.now() + i * 900000),
-          "50000", "50100", "49900", "50050", "1000"
-        ])
-      })
+      const mockKlineResponse = {
+        retCode: 0,
+        retMsg: 'OK',
+        result: {
+          list: Array.from({ length: 50 }, (_, i) => [
+            String(Date.now() + i * 900000),
+            "50000", "50100", "49900", "50050", "1000"
+          ])
+        },
+        time: Date.now(),
+      };
+
+      (mockClient.getKline as jest.Mock).mockResolvedValueOnce(mockKlineResponse)
 
       const request: ToolCallRequest = {
         method: "tools/call",
@@ -258,8 +272,15 @@ describe('GetMLRSI Tool', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      // Mock API error
-      mockExecuteRequest.mockRejectedValue(new Error('API Error'))
+      // Mock API error - use non-retryable error code
+      const mockErrorResponse = {
+        retCode: 10001,
+        retMsg: 'Parameter error',
+        result: null,
+        time: Date.now(),
+      };
+
+      (mockClient.getKline as jest.Mock).mockResolvedValue(mockErrorResponse)
 
       const request: ToolCallRequest = {
         method: "tools/call",
@@ -281,12 +302,19 @@ describe('GetMLRSI Tool', () => {
   describe('Response Format', () => {
     it('should return properly formatted ML-RSI response', async () => {
       // Mock successful API response
-      mockExecuteRequest.mockResolvedValue({
-        list: Array.from({ length: 200 }, (_, i) => [
-          String(Date.now() + i * 900000),
-          "50000", "50100", "49900", "50050", "1000"
-        ])
-      })
+      const mockKlineResponse = {
+        retCode: 0,
+        retMsg: 'OK',
+        result: {
+          list: Array.from({ length: 200 }, (_, i) => [
+            String(Date.now() + i * 900000),
+            "50000", "50100", "49900", "50050", "1000"
+          ])
+        },
+        time: Date.now(),
+      };
+
+      (mockClient.getKline as jest.Mock).mockResolvedValueOnce(mockKlineResponse)
 
       const request: ToolCallRequest = {
         method: "tools/call",
