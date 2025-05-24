@@ -3067,7 +3067,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{url}}/v5/execution/list?category=linear&symbol=ETHUSDT&execType=Funding",
+							"raw": "{{url}}/v5/execution/list?category=linear&symbol=XRPUSDT&execType=Funding",
 							"host": [
 								"{{url}}"
 							],
@@ -3088,7 +3088,7 @@
 								},
 								{
 									"key": "symbol",
-									"value": "ETHUSDT"
+									"value": "XRPUSDT"
 								},
 								{
 									"key": "endTime",
@@ -7872,7 +7872,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"symbol\": \"ETHUSDT\",\n    \"takeProfit\": \"850\",\n    \"stopLoss\": \"1150\",\n    \"activePrice\": null,\n    \"trailingStop\": null,\n    \"tpTriggerBy\": \"LastPrice\",\n    \"slTriggerBy\": \"MarkPrice\",\n    \"slSize\": \"0.06\",\n    \"tpSize\": \"0.05\",\n    \"positionIdx\": 2\n}"
+							"raw": "{\n    \"symbol\": \"XRPUSDT\",\n    \"takeProfit\": \"850\",\n    \"stopLoss\": \"1150\",\n    \"activePrice\": null,\n    \"trailingStop\": null,\n    \"tpTriggerBy\": \"LastPrice\",\n    \"slTriggerBy\": \"MarkPrice\",\n    \"slSize\": \"0.06\",\n    \"tpSize\": \"0.05\",\n    \"positionIdx\": 2\n}"
 						},
 						"url": {
 							"raw": "{{url}}/v5/asset/settlement-record?category=linear&symbol=BTCPERP",
@@ -8083,7 +8083,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"symbol\": \"ETHUSDT\",\n    \"takeProfit\": \"850\",\n    \"stopLoss\": \"1150\",\n    \"activePrice\": null,\n    \"trailingStop\": null,\n    \"tpTriggerBy\": \"LastPrice\",\n    \"slTriggerBy\": \"MarkPrice\",\n    \"slSize\": \"0.06\",\n    \"tpSize\": \"0.05\",\n    \"positionIdx\": 2\n}"
+							"raw": "{\n    \"symbol\": \"XRPUSDT\",\n    \"takeProfit\": \"850\",\n    \"stopLoss\": \"1150\",\n    \"activePrice\": null,\n    \"trailingStop\": null,\n    \"tpTriggerBy\": \"LastPrice\",\n    \"slTriggerBy\": \"MarkPrice\",\n    \"slSize\": \"0.06\",\n    \"tpSize\": \"0.05\",\n    \"positionIdx\": 2\n}"
 						},
 						"url": {
 							"raw": "{{url}}/v5/asset/transfer/query-sub-member-list",

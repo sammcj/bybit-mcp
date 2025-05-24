@@ -1220,7 +1220,7 @@ paths:
           in: query
           schema:
             type: string
-          example: ETHUSDT
+          example: XRPUSDT
         - name: execType
           in: query
           schema:

@@ -41,6 +41,8 @@ export class AIClient implements AIService {
           parameters: tool.inputSchema,
         },
       }));
+      console.log('🔧 Available MCP tools:', tools.length);
+      console.log('🔧 Tool definitions:', tools);
     } catch (error) {
       console.warn('Failed to get MCP tools:', error);
     }
@@ -56,7 +58,17 @@ export class AIClient implements AIService {
       ...options,
     };
 
+    console.log('🚀 Sending request to AI:', {
+      model: request.model,
+      toolsCount: tools.length,
+      hasTools: !!request.tools,
+      toolChoice: request.tool_choice
+    });
+
     try {
+      console.log('🌐 Making request to:', `${this.config.endpoint}/v1/chat/completions`);
+      console.log('📤 Request body:', JSON.stringify(request, null, 2));
+
       const response = await fetch(`${this.config.endpoint}/v1/chat/completions`, {
         method: 'POST',
         headers: {
@@ -65,8 +77,19 @@ export class AIClient implements AIService {
         body: JSON.stringify(request),
       });
 
+      console.log('📡 Response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorText = await response.text();
+        console.error('❌ Error response body:', errorText);
+
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+
         throw this.createError(
           'API_ERROR',
           `HTTP ${response.status}: ${response.statusText}`,
@@ -75,6 +98,12 @@ export class AIClient implements AIService {
       }
 
       const data = await response.json();
+      console.log('📥 AI Response:', {
+        choices: data.choices?.length,
+        hasToolCalls: !!data.choices?.[0]?.message?.tool_calls,
+        toolCallsCount: data.choices?.[0]?.message?.tool_calls?.length || 0,
+        content: data.choices?.[0]?.message?.content?.substring(0, 100) + '...'
+      });
       return data as ChatCompletionResponse;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -118,6 +147,54 @@ export class AIClient implements AIService {
   }
 
   /**
+   * Parse tool calls from text content (fallback for models that don't support function calling)
+   */
+  private parseToolCallsFromText(content: string): { toolCalls: any[], cleanContent: string } {
+    // Match both single and triple backticks
+    const toolCallPattern = /(`{1,3})tool_code\s*\n?([^`]+)\1/g;
+    const toolCalls: any[] = [];
+    let cleanContent = content;
+
+    let match;
+    while ((match = toolCallPattern.exec(content)) !== null) {
+      const toolCallText = match[2].trim(); // match[2] is the content, match[1] is the backticks
+
+      // Parse function call like: get_ticker(symbol="BTCUSDT")
+      const functionCallPattern = /(\w+)\s*\(\s*([^)]*)\s*\)/;
+      const funcMatch = functionCallPattern.exec(toolCallText);
+
+      if (funcMatch) {
+        const functionName = funcMatch[1];
+        const argsString = funcMatch[2];
+
+        // Parse arguments (simple key=value parsing)
+        const args: Record<string, any> = {};
+        if (argsString) {
+          const argPattern = /(\w+)\s*=\s*"([^"]+)"/g;
+          let argMatch;
+          while ((argMatch = argPattern.exec(argsString)) !== null) {
+            args[argMatch[1]] = argMatch[2];
+          }
+        }
+
+        toolCalls.push({
+          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'function',
+          function: {
+            name: functionName,
+            arguments: args
+          }
+        });
+
+        // Remove the tool call from content
+        cleanContent = cleanContent.replace(match[0], '').trim();
+      }
+    }
+
+    return { toolCalls, cleanContent };
+  }
+
+  /**
    * Send a chat completion with automatic tool calling
    */
   async chatWithTools(messages: ChatMessage[]): Promise<ChatMessage[]> {
@@ -126,16 +203,29 @@ export class AIClient implements AIService {
 
     // Check if the response contains tool calls
     const choice = response.choices[0];
-    if (choice?.message?.tool_calls) {
+    let toolCalls = choice?.message?.tool_calls;
+    let content = choice?.message?.content || '';
+
+    // If no native tool calls, try to parse from text content
+    if (!toolCalls && content) {
+      const parsed = this.parseToolCallsFromText(content);
+      if (parsed.toolCalls.length > 0) {
+        toolCalls = parsed.toolCalls;
+        content = parsed.cleanContent;
+        console.log('🔍 Parsed tool calls from text:', toolCalls);
+      }
+    }
+
+    if (toolCalls && toolCalls.length > 0) {
       // Add the assistant's message with tool calls
       conversationMessages.push({
         role: 'assistant',
-        content: choice.message.content || '',
-        tool_calls: choice.message.tool_calls,
+        content: content,
+        tool_calls: toolCalls,
       });
 
       // Execute tool calls
-      const toolResults = await this.executeToolCalls(choice.message.tool_calls);
+      const toolResults = await this.executeToolCalls(toolCalls);
 
       // Add tool results to conversation
       conversationMessages.push(...toolResults);

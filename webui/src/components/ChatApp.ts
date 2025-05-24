@@ -2,7 +2,7 @@
  * Main chat application component
  */
 
-import type { ChatUIMessage, ChatState, ChatCompletionStreamResponse } from '@/types/ai';
+import type { ChatUIMessage, ChatState } from '@/types/ai';
 import { aiClient } from '@/services/aiClient';
 import { mcpClient } from '@/services/mcpClient';
 import { configService } from '@/services/configService';
@@ -147,6 +147,8 @@ export class ChatApp {
     this.showTypingIndicator();
 
     try {
+      console.log('💬 Starting chat request...');
+
       // Prepare messages for AI
       const messages = this.state.messages.map(msg => ({
         role: msg.role,
@@ -160,9 +162,13 @@ export class ChatApp {
         ...messages,
       ];
 
+      console.log('📝 Prepared messages:', aiMessages);
+
       // Use tool calling instead of streaming for now
       // This allows proper tool execution and response handling
+      console.log('🔄 Calling aiClient.chatWithTools...');
       const conversationMessages = await aiClient.chatWithTools(aiMessages);
+      console.log('✅ Got conversation messages:', conversationMessages.length);
 
       // Find the final assistant response
       const finalAssistantMessage = conversationMessages
@@ -182,7 +188,13 @@ export class ChatApp {
       }
 
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
+      console.error('❌ Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        details: (error as any)?.details
+      });
 
       // Add error message
       const errorMessage: ChatUIMessage = {
@@ -210,21 +222,9 @@ export class ChatApp {
     this.scrollToBottom();
   }
 
-  private appendToMessage(messageId: string, content: string): void {
-    const message = this.state.messages.find(m => m.id === messageId);
-    if (message) {
-      message.content += content;
-      this.updateMessageContent(messageId, message.content);
-    }
-  }
 
-  private completeStreaming(messageId: string): void {
-    const message = this.state.messages.find(m => m.id === messageId);
-    if (message) {
-      message.isStreaming = false;
-      this.updateMessageStreamingState(messageId, false);
-    }
-  }
+
+
 
   private renderMessage(message: ChatUIMessage): void {
     // Remove welcome message if this is the first real message
@@ -252,7 +252,7 @@ export class ChatApp {
         <span class="message-time">${time}</span>
       </div>
       <div class="message-content ${contentClass}" data-content>
-        ${this.formatMessageContent(message.content)}
+        ${this.formatMessageContent(message.content || '')}
         ${message.isStreaming ? '<span class="cursor">|</span>' : ''}
       </div>
     `;
@@ -260,27 +260,7 @@ export class ChatApp {
     this.chatMessages.appendChild(messageElement);
   }
 
-  private updateMessageContent(messageId: string, content: string): void {
-    const messageElement = this.chatMessages.querySelector(`[data-message-id="${messageId}"]`);
-    const contentElement = messageElement?.querySelector('[data-content]');
 
-    if (contentElement) {
-      contentElement.innerHTML = this.formatMessageContent(content) + '<span class="cursor">|</span>';
-    }
-  }
-
-  private updateMessageStreamingState(messageId: string, isStreaming: boolean): void {
-    const messageElement = this.chatMessages.querySelector(`[data-message-id="${messageId}"]`);
-    const contentElement = messageElement?.querySelector('[data-content]');
-
-    if (contentElement && !isStreaming) {
-      // Remove cursor
-      const cursor = contentElement.querySelector('.cursor');
-      if (cursor) {
-        cursor.remove();
-      }
-    }
-  }
 
   private formatMessageContent(content: string): string {
     // Basic markdown-like formatting

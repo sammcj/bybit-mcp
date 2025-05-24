@@ -32,25 +32,39 @@ export class MCPClient {
    */
   async initialize(): Promise<void> {
     try {
+      console.log('🔌 Initializing MCP client...');
+      console.log('🔗 MCP endpoint:', `${this.baseUrl}/mcp`);
+
       // Create client
       this.client = new Client({
         name: 'bybit-mcp-webui',
         version: '1.0.0'
       });
+      console.log('✅ MCP client created');
 
       // Create transport
       this.transport = new StreamableHTTPClientTransport(
         new URL(`${this.baseUrl}/mcp`)
       );
+      console.log('✅ Transport created');
 
       // Connect to server
+      console.log('🔄 Connecting to MCP server...');
       await this.client.connect(this.transport);
       this.connected = true;
+      console.log('✅ Connected to MCP server');
 
       // Load available tools
+      console.log('🔄 Loading tools...');
       await this.listTools();
+      console.log('✅ MCP client fully initialized');
     } catch (error) {
-      console.error('Failed to initialize MCP client:', error);
+      console.error('❌ Failed to initialize MCP client:', error);
+      console.error('❌ MCP Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       this.connected = false;
       throw new Error('Failed to connect to MCP server');
     }

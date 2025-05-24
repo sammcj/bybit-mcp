@@ -29,7 +29,7 @@ export interface MCPTool {
   description: string;
   inputSchema: {
     type: 'object';
-    properties: Record<string, unknown>;
+    properties?: Record<string, unknown>;
     required?: string[];
   };
 }
@@ -224,7 +224,7 @@ export interface GetMarketStructureParams {
 }
 
 // Available MCP tools
-export type MCPToolName = 
+export type MCPToolName =
   | 'get_ticker'
   | 'get_orderbook'
   | 'get_kline'
@@ -238,7 +238,7 @@ export type MCPToolName =
   | 'get_order_blocks'
   | 'get_market_structure';
 
-export type MCPToolParams<T extends MCPToolName> = 
+export type MCPToolParams<T extends MCPToolName> =
   T extends 'get_ticker' ? GetTickerParams :
   T extends 'get_kline' ? GetKlineParams :
   T extends 'get_orderbook' ? GetOrderbookParams :
@@ -247,7 +247,7 @@ export type MCPToolParams<T extends MCPToolName> =
   T extends 'get_market_structure' ? GetMarketStructureParams :
   Record<string, unknown>;
 
-export type MCPToolResponse<T extends MCPToolName> = 
+export type MCPToolResponse<T extends MCPToolName> =
   T extends 'get_ticker' ? TickerData :
   T extends 'get_kline' ? KlineData :
   T extends 'get_orderbook' ? OrderbookData :
