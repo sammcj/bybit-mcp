@@ -17,6 +17,8 @@ A modern web interface for the Bybit MCP (Model Context Protocol) server that pr
 
 **Tasks**:
 
+- [ ] Chat history: Add persisted chat history, we want to keep this very lightweight, simple and fast / low latency, we also don't want it getting too big, so we will limit it to the last 20 messages for up to 20 chats, it shouldn't rely on any external services.
+- [ ] Add in-memory caching of tool responses with a default TTL of 3 minutes (configurable)
 - [ ] **Chart Integration**: Auto-generate charts when AI mentions price data
 - [ ] **Analysis Widgets**: Embed analysis results directly in chat
 - [ ] **Message Actions**: Copy, share, regenerate responses
