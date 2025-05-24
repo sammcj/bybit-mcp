@@ -172,29 +172,48 @@ export class CitationStore {
       return;
     }
 
+    // MCP responses are wrapped in a content array, so we need to extract the actual data
+    let actualData = toolResponse;
+
+    // Check if response has content array (MCP format)
+    if (toolResponse.content && Array.isArray(toolResponse.content) && toolResponse.content.length > 0) {
+      console.log('🔍 Found MCP content array, extracting data...');
+      const contentItem = toolResponse.content[0];
+      if (contentItem.type === 'text' && contentItem.text) {
+        try {
+          actualData = JSON.parse(contentItem.text);
+          console.log('🔍 Parsed content data:', actualData);
+        } catch (e) {
+          console.log('❌ Failed to parse content text as JSON');
+          return;
+        }
+      }
+    }
+
     // Check if response has reference metadata
-    if (toolResponse._referenceId && toolResponse._timestamp && toolResponse._toolName) {
+    if (actualData._referenceId && actualData._timestamp && actualData._toolName) {
       console.log('✅ Found reference metadata:', {
-        referenceId: toolResponse._referenceId,
-        toolName: toolResponse._toolName,
-        timestamp: toolResponse._timestamp
+        referenceId: actualData._referenceId,
+        toolName: actualData._toolName,
+        timestamp: actualData._timestamp
       });
 
-      const extractedMetrics = this.extractMetrics(toolResponse._toolName, toolResponse);
+      const extractedMetrics = this.extractMetrics(actualData._toolName, actualData);
 
       const citationData: CitationData = {
-        referenceId: toolResponse._referenceId,
-        timestamp: toolResponse._timestamp,
-        toolName: toolResponse._toolName,
-        endpoint: toolResponse._endpoint,
-        rawData: toolResponse,
+        referenceId: actualData._referenceId,
+        timestamp: actualData._timestamp,
+        toolName: actualData._toolName,
+        endpoint: actualData._endpoint,
+        rawData: actualData,
         extractedMetrics
       };
 
       this.storeCitation(citationData);
-      console.log('📋 Stored citation data for', toolResponse._referenceId);
+      console.log('📋 Stored citation data for', actualData._referenceId);
     } else {
       console.log('❌ No reference metadata found in tool response');
+      console.log('🔍 Available keys in actualData:', Object.keys(actualData));
     }
   }
 
