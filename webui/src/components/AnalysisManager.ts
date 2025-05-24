@@ -111,7 +111,7 @@ export class AnalysisManager {
           <option value="ETHUSDT">ETH/USDT</option>
           <option value="SOLUSDT">SOL/USDT</option>
           <option value="XRPUSDT">XRP/USDT</option>
-          <option value="ADAUSDT">ADA/USDT</option>
+          <option value="DOGEUSDT">DOGE/USDT</option>
         </select>
         <select id="analysis-interval-select" class="interval-select">
           <option value="1">1m</option>
