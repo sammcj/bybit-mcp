@@ -13,6 +13,7 @@ import type {
   ModelInfo,
 } from '@/types/ai';
 import { mcpClient } from './mcpClient';
+import { systemPromptService } from './systemPrompt';
 
 export class AIClient implements AIService {
   private config: AIConfig;
@@ -430,51 +431,17 @@ export class AIClient implements AIService {
 
 // Function to generate system prompt with current timestamp
 export function generateSystemPrompt(): string {
-  // Get current timestamp in YYYY-MM-DD HH:MM:SS format
-  const now = new Date();
-  const timestamp = now.getFullYear() + '-' +
-    String(now.getMonth() + 1).padStart(2, '0') + '-' +
-    String(now.getDate()).padStart(2, '0') + ' ' +
-    String(now.getHours()).padStart(2, '0') + ':' +
-    String(now.getMinutes()).padStart(2, '0') + ':' +
-    String(now.getSeconds()).padStart(2, '0');
+  // Use the centralized system prompt service for legacy compatibility
+  return systemPromptService.generateLegacySystemPrompt();
+}
 
-  return `You are an AI assistant specialised in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.
-
-Current date and time: ${timestamp}
-
-Available tools include:
-
-- get_order_blocks: Detect institutional order accumulation zones
-- get_market_structure: Comprehensive market analysis with regime detection
-- get_ticker: Get real-time ticker information for a trading pair
-- get_orderbook: Get orderbook (market depth) data for a trading pair
-- get_kline: Get kline/candlestick data for a trading pair
-- get_market_info: Get detailed market information for trading pairs
-- get_trades: Get recent trades for a trading pair
-- get_instrument_info: Get detailed instrument information for a specific trading pair
-- get_wallet_balance: Get wallet balance information for the authenticated user
-- get_positions: Get current positions information for the authenticated user
-- get_order_history: Get order history for the authenticated user
-- get_ml_rsi: Get machine learning-based RSI (Relative Strength Index) for a trading pair
-- get_market_structure: Get market structure information for a trading pair
-
-When users ask about market data or analysis:
-1. Use the appropriate MCP tools to fetch current data
-2. Provide clear, actionable insights
-3. Explain technical concepts in an accessible way
-4. Include relevant charts and visualisations when possible
-5. Always mention the timestamp of data and any limitations
-
-IMPORTANT:
-- When calling tools, ensure numeric parameters are passed as numbers, not strings. The system will automatically convert string numbers to proper numeric types, but it's best practice to use correct types.
-- For all Bybit tool calls, always include the parameter "includeReferenceId": true to enable data verification.
-- When citing specific data from tool responses, include the reference ID in square brackets like [REF001].
-- Always format your responses in markdown for better readability.
-- NEVER make up data, always use the latest data from the tools you have available, if you don't have access to the data say so.
-- IMPORTANT: For all Bybit tool calls, always include the parameter "includeReferenceId": true to enable data verification. When citing specific data from tool responses, include the reference ID in square brackets like [REF001].
-
-Be helpful, accurate, and focused on providing valuable trading insights.`;
+// Async function to generate system prompt with dynamic tools
+export async function generateDynamicSystemPrompt(): Promise<string> {
+  return await systemPromptService.generateSystemPrompt({
+    includeTimestamp: true,
+    includeTools: true,
+    includeMemoryContext: false
+  });
 }
 
 // Default system prompt for Bybit MCP integration (for backward compatibility)

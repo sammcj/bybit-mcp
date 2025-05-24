@@ -11,6 +11,7 @@ import { aiClient } from './aiClient';
 import { mcpClient } from './mcpClient';
 import { agentMemory } from './agentMemory';
 import { performanceOptimiser } from './performanceOptimiser';
+import { systemPromptService } from './systemPrompt';
 import type { ChatMessage } from '@/types/ai';
 
 export class CustomAgentService {
@@ -99,38 +100,13 @@ export class CustomAgentService {
   /**
    * Build system prompt based on configuration and memory context
    */
-  private buildSystemPrompt(symbol?: string): string {
-    // Get current timestamp in YYYY-MM-DD HH:MM:SS format
-    const now = new Date();
-    const timestamp = now.getFullYear() + '-' +
-      String(now.getMonth() + 1).padStart(2, '0') + '-' +
-      String(now.getDate()).padStart(2, '0') + ' ' +
-      String(now.getHours()).padStart(2, '0') + ':' +
-      String(now.getMinutes()).padStart(2, '0') + ':' +
-      String(now.getSeconds()).padStart(2, '0');
-
-    const basePrompt = `You are an expert cryptocurrency trading assistant with access to real-time market data and advanced analysis tools.
-
-Current date and time: ${timestamp}
-
-Your capabilities include:
-- Real-time price and market data analysis
-- Technical indicator analysis including ML-enhanced RSI
-- Market structure analysis with order blocks and liquidity zones
-- Risk assessment and position sizing recommendations
-
-Available tools: ${this.availableTools.map((t: any) => t.name).join(', ')}
-
-Guidelines:
-1. Always use relevant tools to gather current data before making recommendations
-2. Provide clear, actionable insights with proper risk warnings
-3. Explain your reasoning and methodology
-4. Include confidence levels in your analysis
-5. Consider multiple timeframes when relevant
-6. Use tools intelligently based on the user's question - don't call unnecessary tools
-7. Provide comprehensive analysis when appropriate, but be concise when a simple answer suffices
-8. IMPORTANT: For all Bybit tool calls, always include the parameter "includeReferenceId": true to enable data verification
-9. When citing specific data from tool responses, include the reference ID in square brackets like [REF001]`;
+  private async buildSystemPrompt(symbol?: string): Promise<string> {
+    // Get base system prompt from centralized service
+    const basePrompt = await systemPromptService.generateSystemPrompt({
+      includeTimestamp: true,
+      includeTools: true,
+      includeMemoryContext: false
+    });
 
     // Add memory context if available
     const memoryContext = agentMemory.buildContextSummary(symbol);
@@ -227,7 +203,7 @@ Guidelines:
     let iteration = 0;
 
     // Prepare messages with system prompt and tools
-    const systemPrompt = this.buildSystemPrompt(symbol);
+    const systemPrompt = await this.buildSystemPrompt(symbol);
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...this.conversationHistory
