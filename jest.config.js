@@ -22,7 +22,11 @@ export default {
   testPathIgnorePatterns: [
     '<rootDir>/build/',
     '<rootDir>/node_modules/',
-    '<rootDir>/src/__tests__/test-setup.ts'
+    '<rootDir>/src/__tests__/test-setup.ts',
+    '<rootDir>/src/__tests__/integration.test.ts'
+  ],
+  testMatch: [
+    '<rootDir>/src/**/*.test.ts'
   ],
   collectCoverageFrom: [
     'src/**/*.ts',

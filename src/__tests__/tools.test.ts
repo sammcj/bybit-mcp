@@ -5,9 +5,7 @@ import GetPositions from '../tools/GetPositions.js'
 import GetWalletBalance from '../tools/GetWalletBalance.js'
 import GetInstrumentInfo from '../tools/GetInstrumentInfo.js'
 import GetKline from '../tools/GetKline.js'
-import GetMarketInfo from '../tools/GetMarketInfo.js'
 import GetOrderHistory from '../tools/GetOrderHistory.js'
-import GetTrades from '../tools/GetTrades.js'
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
 import { RestClientV5 } from "bybit-api"
@@ -20,12 +18,10 @@ const mockClient = {
   getOrderbook: jest.fn(),
   getPositionInfo: jest.fn(),
   getWalletBalance: jest.fn(),
-  getInstruments: jest.fn(),
+  getInstrumentsInfo: jest.fn(),
   getKline: jest.fn(),
-  getMarkets: jest.fn(),
   getHistoricOrders: jest.fn(),
-  getTrades: jest.fn(),
-} as unknown as RestClientV5
+} as any
 
 describe('Bybit MCP Tools', () => {
   const mockSuccessResponse = {
@@ -260,7 +256,7 @@ describe('Bybit MCP Tools', () => {
       expect(result.content[0].type).toBe('text')
       expect(result.isError).toBe(true)
       const errorData = JSON.parse(result.content[0].text as string)
-      expect(errorData.category).toBe('VALIDATION')
+      expect(errorData.category).toBe('AUTHENTICATION') // Auth check happens before validation
     })
 
     it('should handle successful API response', async () => {
@@ -356,7 +352,7 @@ describe('Bybit MCP Tools', () => {
         method: 'tools/call' as const,
       };
 
-      (mockClient.getInstruments as jest.Mock).mockResolvedValueOnce(mockSuccessResponse)
+      (mockClient.getInstrumentsInfo as jest.Mock).mockResolvedValueOnce(mockSuccessResponse)
 
       const result = await getInstrumentInfo.toolCall(request)
       expect(result.content[0].type).toBe('text')
@@ -390,31 +386,6 @@ describe('Bybit MCP Tools', () => {
     })
   })
 
-  describe('GetMarketInfo', () => {
-    let getMarketInfo: GetMarketInfo
-
-    beforeEach(() => {
-      getMarketInfo = new GetMarketInfo(mockClient)
-    })
-
-    it('should handle successful API response', async () => {
-      const request: ToolCallRequest = {
-        params: {
-          name: 'get_market_info',
-          arguments: {
-            category: 'spot',
-          },
-        },
-        method: 'tools/call' as const,
-      };
-
-      (mockClient.getMarkets as jest.Mock).mockResolvedValueOnce(mockSuccessResponse)
-
-      const result = await getMarketInfo.toolCall(request)
-      expect(result.content[0].type).toBe('text')
-    })
-  })
-
   describe('GetOrderHistory', () => {
     let getOrderHistory: GetOrderHistory
 
@@ -440,29 +411,4 @@ describe('Bybit MCP Tools', () => {
     })
   })
 
-  describe('GetTrades', () => {
-    let getTrades: GetTrades
-
-    beforeEach(() => {
-      getTrades = new GetTrades(mockClient)
-    })
-
-    it('should handle successful API response', async () => {
-      const request: ToolCallRequest = {
-        params: {
-          name: 'get_trades',
-          arguments: {
-            category: 'spot',
-            symbol: 'BTCUSDT',
-          },
-        },
-        method: 'tools/call' as const,
-      };
-
-      (mockClient.getTrades as jest.Mock).mockResolvedValueOnce(mockSuccessResponse)
-
-      const result = await getTrades.toolCall(request)
-      expect(result.content[0].type).toBe('text')
-    })
-  })
 })

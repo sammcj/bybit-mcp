@@ -9,7 +9,7 @@ type ToolCallRequest = z.infer<typeof CallToolRequestSchema>
 // Create mock client methods
 const mockClient = {
   getKline: jest.fn(),
-} as unknown as RestClientV5
+} as any
 
 describe('GetMLRSI Tool', () => {
   let getMLRSI: GetMLRSI
