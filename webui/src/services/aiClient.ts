@@ -409,7 +409,7 @@ export class AIClient implements AIService {
 
 
   /**
-   * Create a standardized error object
+   * Create a standardised error object
    */
   private createError(code: string, message: string, details?: unknown): AIError {
     const error = new Error(message) as Error & AIError;
@@ -421,7 +421,7 @@ export class AIClient implements AIService {
 }
 
 // Default system prompt for Bybit MCP integration
-export const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant specialized in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.
+export const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant specialised in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.
 
 Available tools include:
 - get_ticker: Get real-time price data for trading pairs
@@ -435,10 +435,10 @@ When users ask about market data or analysis:
 1. Use the appropriate MCP tools to fetch current data
 2. Provide clear, actionable insights
 3. Explain technical concepts in an accessible way
-4. Include relevant charts and visualizations when possible
+4. Include relevant charts and visualisations when possible
 5. Always mention the timestamp of data and any limitations
 
-Be helpful, accurate, and focused on providing valuable trading insights while emphasizing risk management.`;
+Be helpful, accurate, and focused on providing valuable trading insights while emphasising risk management.`;
 
 // Create default AI client instance
 export function createAIClient(config?: Partial<AIConfig>): AIClient {
