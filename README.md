@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/sammcj-bybit-mcp-badge.png)](https://mseep.ai/app/sammcj-bybit-mcp)
+
 # Bybit MCP Server
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction) server that provides read-only access to Bybit's cryptocurrency exchange API.
