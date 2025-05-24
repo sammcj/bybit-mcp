@@ -36,4 +36,4 @@ coverage/
 !.env.example
 
 # pinescripts
-DEV_PLAN.md
+# DEV_PLAN.md
