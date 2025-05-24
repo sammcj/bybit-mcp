@@ -17,7 +17,8 @@ const inputSchema = z.object({
   symbol: z.string()
     .min(1, "Symbol is required")
     .regex(/^[A-Z0-9]+$/, "Symbol must contain only uppercase letters and numbers"),
-  category: z.enum(["spot", "linear", "inverse"]).optional()
+  category: z.enum(["spot", "linear", "inverse"]).optional(),
+  includeReferenceId: z.boolean().optional().default(false)
 })
 
 type SupportedCategory = z.infer<typeof inputSchema>["category"]
@@ -27,7 +28,7 @@ class GetTicker extends BaseToolImplementation {
   name = "get_ticker"
   toolDefinition: Tool = {
     name: this.name,
-    description: "Get real-time ticker information for a trading pair",
+    description: "Get real-time ticker information for a trading pair. Supports optional reference ID for data verification.",
     inputSchema: {
       type: "object",
       properties: {
@@ -43,6 +44,13 @@ class GetTicker extends BaseToolImplementation {
           type: "string",
           description: "Category of the instrument (spot, linear, inverse)",
           enum: ["spot", "linear", "inverse"],
+          annotations: {
+            priority: 0 // Optional parameter
+          }
+        },
+        includeReferenceId: {
+          type: "boolean",
+          description: "Include reference ID and metadata for data verification (default: false)",
           annotations: {
             priority: 0 // Optional parameter
           }
@@ -86,8 +94,8 @@ class GetTicker extends BaseToolImplementation {
         throw new Error(`Invalid input: ${JSON.stringify(errorDetails)}`)
       }
 
-      const { symbol, category = CONSTANTS.DEFAULT_CATEGORY as "spot" | "linear" | "inverse" } = validationResult.data
-      this.logInfo(`Validated arguments - symbol: ${symbol}, category: ${category}`)
+      const { symbol, category = CONSTANTS.DEFAULT_CATEGORY as "spot" | "linear" | "inverse", includeReferenceId } = validationResult.data
+      this.logInfo(`Validated arguments - symbol: ${symbol}, category: ${category}, includeReferenceId: ${includeReferenceId}`)
 
       // Execute API request with rate limiting and retry logic
       const response = await this.executeRequest(async () => {
@@ -122,15 +130,24 @@ class GetTicker extends BaseToolImplementation {
       }
 
       // Add spot-specific fields if applicable
+      let finalResult = baseResult
       if (category === "spot" && "usdIndexPrice" in ticker) {
-        return this.formatResponse({
+        finalResult = {
           ...baseResult,
           usdIndexPrice: ticker.usdIndexPrice
-        })
+        }
       }
 
+      // Add reference metadata if requested
+      const resultWithMetadata = this.addReferenceMetadata(
+        finalResult,
+        includeReferenceId,
+        this.name,
+        `/v5/market/tickers`
+      )
+
       this.logInfo(`Successfully retrieved ticker data for ${symbol}`)
-      return this.formatResponse(baseResult)
+      return this.formatResponse(resultWithMetadata)
     } catch (error) {
       this.logInfo(`Error in get_ticker: ${error instanceof Error ? error.message : String(error)}`)
       return this.handleError(error)

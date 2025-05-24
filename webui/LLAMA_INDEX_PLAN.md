@@ -1,140 +1,132 @@
-# LlamaIndex Migration Plan
+# Bybit MCP WebUI Enhancement Plan
 
 ## Overview
 
-Migrate the Bybit MCP WebUI from custom AI client implementation to LlamaIndex for enhanced agentic capabilities, multi-step workflows, and better tool orchestration.
+The Bybit MCP WebUI has been successfully enhanced with a custom agent system providing multi-step reasoning capabilities. This document outlines completed work and upcoming enhancements for data verification and user trust.
 
-## Key Benefits
+## ✅ Completed Implementation
 
-- **Multi-step reasoning**: LLM can chain multiple tool calls automatically
-- **Native MCP integration**: Built-in support for MCP servers
-- **Workflow orchestration**: Complex decision trees and conditional logic
-- **Streaming events**: Real-time visibility into agent thinking process
-- **Multi-agent support**: Different agents for different analysis types
-
-## Migration Tasks
-
-### Phase 1: Core Infrastructure (2-3 days) ✅ COMPLETED
-
-**Status**: Successfully implemented custom agent system with multi-step tool calling capabilities. Browser compatibility achieved by building our own agent orchestration instead of using LlamaIndex.
-
-## ✅ Implementation Summary
-
-### What We Built
-- **Custom Agent Service**: `CustomAgentService` class that provides multi-step reasoning
-- **Multi-Step Tool Calling**: Agent can iterate through multiple tool calls to complete complex tasks
-- **Configurable Workflows**: Support for different complexity levels (simple, standard, comprehensive)
-- **Real-time Events**: Workflow event system for monitoring agent progress
-- **Streaming Support**: Real-time streaming of agent responses
-- **Agent Configuration**: Comprehensive settings system with presets
+### Core Agent System (COMPLETED)
+- **Custom Agent Service**: Multi-step reasoning with iterative tool calling
+- **Simplified Configuration**: Essential settings only, removed complex multi-agent options
 - **Browser Compatible**: No Node.js dependencies, runs entirely in the browser
+- **Integrated Settings**: Agent configuration moved to main settings modal
+- **Error Handling**: Robust handling of placeholder responses and tool call failures
 
-### Key Features Implemented
-1. **Agent Loop**: Iterative reasoning that continues until task completion or max iterations
-2. **Tool Integration**: Uses existing MCP client for tool execution
-3. **Event System**: Real-time workflow events for UI feedback
-4. **Configuration Management**: Persistent agent settings with validation
-5. **Fallback Support**: Graceful degradation to legacy AI client
-6. **UI Integration**: Agent settings modal and mode toggle
+### Key Features Delivered
+1. **Single-Agent Mode**: Streamlined workflow with one agent handling all tasks
+2. **Multi-Step Tool Calling**: Agent iterates through multiple tool calls automatically
+3. **Intelligent Content Validation**: Handles AI placeholder responses gracefully
+4. **Clean UI**: No auto-popup modals, optional configuration
+5. **Real-time Streaming**: Live agent responses with workflow visibility
 
-### Technical Architecture
-- **Agent Service**: `src/services/llamaIndexAgent.ts` (renamed from LlamaIndex for clarity)
-- **Configuration**: `src/services/agentConfig.ts` with localStorage persistence
-- **Type System**: Comprehensive types for agents, workflows, and events
-- **UI Components**: Agent settings modal and workflow event display
-- **Integration**: Seamless integration with existing ChatApp and AI client
+## � Next Phase: Data Verification & Trust System
 
-## 🚨 Current Issues & Required Fixes
+### Overview
+Enhance user confidence in AI responses by implementing a citation system that allows verification of all data points returned from MCP tool calls. This addresses the critical need for users to distinguish between AI-generated content and real API data.
 
-### Issue 1: Agent Settings Modal Auto-Popup
-**Problem**: Agent settings modal appears automatically on every app load, forcing users to configure settings before using the app.
+### Problem Statement
+**Trust Gap**: Users cannot verify whether data mentioned by the AI (prices, indicators, market data) comes from real Bybit API calls or is hallucinated by the AI model. This is critical for trading decisions where data accuracy is paramount.
 
-**Root Cause**: Unknown - need to investigate if modal is being auto-opened or has CSS visibility issues.
+### Solution: Citation & Verification System
+Implement a comprehensive system that:
+1. **Tracks all tool responses** with unique reference IDs
+2. **Links AI responses to source data** through citation markers
+3. **Provides interactive verification** via hover tooltips and data panels
+4. **Maintains loose coupling** so MCP server works with other clients
 
-**Required Fix**:
-- Remove auto-popup behaviour
-- Modal should only open when user clicks settings button
-- Use sensible defaults so configuration is optional
+## 📋 Implementation Tasks
 
-### Issue 2: Overly Complex Configuration
-**Problem**: Current agent configuration is too complex with unnecessary options:
-- Multi-agent vs Single-agent (we only need single-agent)
-- Workflow complexity levels that are confusing (Simple/Standard/Comprehensive)
-- Analysis feature toggles that should be automatic (Risk Assessment, Market Structure, ML Analysis)
+### Phase 1: System Prompt Enhancement
+**Goal**: Ensure agent always knows current context and uses reference IDs
 
-**User Feedback**:
-> "We don't ever need multi-agent"
-> "It's not clear what the difference between Standard and Comprehensive is"
-> "Analysis Features don't make sense, features should just be tools the agent can call if it decides it needs to based on the conversation"
+#### Task 1.1: Dynamic Timestamp in System Prompt
+- [ ] Add current date/time (YYYY-MM-DD HH:MM:SS) to system prompt
+- [ ] Update system prompt generation to include real-time timestamp
+- [ ] Ensure agent understands relative time context for trading analysis
 
-**Required Simplification**:
-1. **Remove multi-agent support** - only single-agent mode
-2. **Simplify workflow complexity** - use one mode, let agent/user prompt decide complexity
-3. **Remove analysis feature toggles** - let agent decide what tools to use based on conversation
-4. **Keep only essential settings** - max iterations, timeouts, UI preferences
+#### Task 1.2: Reference ID Instructions
+- [ ] Update system prompt to instruct agent to use `includeReferenceId: true` for all Bybit tool calls
+- [ ] Add guidance for including reference IDs in responses when citing data
+- [ ] Provide examples of proper citation format: "BTC is trading at $43,250 [REF001]"
 
-## 📋 Immediate Tasks Required
+### Phase 2: MCP Server Enhancement (Loosely Coupled)
+**Goal**: Add optional reference ID capability without breaking existing functionality
 
-### Task 1: Fix Auto-Popup Issue ⚠️ HIGH PRIORITY
-- [ ] Investigate why agent settings modal appears on app load
-- [ ] Ensure modal only opens when explicitly requested
-- [ ] Test that app loads without any popups
+#### Task 2.1: Optional Reference ID Parameter
+- [ ] Add optional `includeReferenceId: boolean` parameter to all Bybit tool functions
+- [ ] When enabled, include `_referenceId` field in tool responses
+- [ ] Generate unique reference IDs (e.g., REF001, REF002, etc.)
+- [ ] Add `_timestamp` field for when the data was retrieved
 
-### Task 2: Simplify Agent Configuration ⚠️ HIGH PRIORITY
-- [ ] Remove multi-agent options from UI and types
-- [ ] Remove workflow complexity radio buttons (Simple/Standard/Comprehensive)
-- [ ] Remove analysis feature checkboxes (Risk Assessment, Market Structure, ML Analysis)
-- [ ] Keep only essential settings:
-  - Max iterations (default: 5)
-  - Tool timeout (default: 30s)
-  - Show workflow steps (default: false)
-  - Show tool calls (default: false)
-  - Debug mode (default: false)
+#### Task 2.2: Enhanced Tool Descriptions
+- [ ] Update tool descriptions to mention reference ID capability
+- [ ] Maintain backward compatibility - default behavior unchanged
+- [ ] Document the reference ID feature for other MCP clients
 
-### Task 3: Update Default Configuration
-- [ ] Set sensible defaults that work out of the box
-- [ ] Ensure agent works well without any configuration
-- [ ] Remove dependency on user configuration for basic functionality
-
-### Task 4: Move Agent Settings to Main Settings
-- [ ] Integrate simplified agent settings into main settings modal
-- [ ] Remove standalone agent settings modal
-- [ ] Add agent toggle to main settings (Agent Mode vs Legacy Mode)
-
-### Task 5: Update Agent Service Logic
-- [ ] Remove multi-agent workflow code
-- [ ] Simplify agent initialization (single mode only)
-- [ ] Remove feature toggle logic - agent should use all available tools
-- [ ] Ensure agent works with minimal configuration
-
-## 🎯 Desired End State
-
-### Simple Configuration
+#### Task 2.3: Response Format Enhancement
 ```typescript
-interface SimplifiedAgentConfig {
-  // Essential settings only
-  maxIterations: number;        // default: 5
-  toolTimeout: number;          // default: 30000ms
-
-  // UI preferences
-  showWorkflowSteps: boolean;   // default: false
-  showToolCalls: boolean;       // default: false
-  enableDebugMode: boolean;     // default: false
-  streamingEnabled: boolean;    // default: true
+// Example enhanced response format
+{
+  symbol: "DOGEUSDT",
+  price: "0.0847",
+  change24h: "+2.34%",
+  volume: "1234567.89",
+  // Optional fields when includeReferenceId: true
+  _referenceId: "REF001",
+  _timestamp: "2024-01-15T22:45:12Z",
+  _toolName: "get_ticker",
+  _endpoint: "/v5/market/tickers"
 }
 ```
 
-### User Experience
-1. **App loads cleanly** - no popups or forced configuration
-2. **Agent works immediately** - sensible defaults, no setup required
-3. **Optional configuration** - accessible via main settings if user wants to customize
-4. **Simple choices** - only essential options, no confusing complexity levels
+### Phase 3: WebUI Citation System
+**Goal**: Capture, store, and display tool response data for verification
 
-### Agent Behaviour
-- **Single-agent mode only** - one agent handles all tasks
-- **Tool selection by conversation** - agent decides what tools to use based on user query
-- **Configurable iterations** - user can set max reasoning steps (default: 5)
-- **Clean UI** - minimal workflow visibility by default, can be enabled if desired
+#### Task 3.1: Tool Response Capture System
+- [ ] Intercept all MCP tool responses in the agent service
+- [ ] Store responses with metadata in a citation store
+- [ ] Create `CitationStore` class for managing reference data
+- [ ] Implement automatic cleanup of old citations
+
+#### Task 3.2: AI Response Processing
+- [ ] Parse AI responses for citation patterns `[REF###]`
+- [ ] Convert citation markers to interactive elements
+- [ ] Link citations to stored tool response data
+- [ ] Handle multiple citations per response
+
+#### Task 3.3: Interactive Citation UI
+- [ ] Create hover tooltips showing:
+  - Tool name used
+  - Timestamp of API call
+  - Raw data returned
+  - API endpoint hit
+- [ ] Style citations as clickable/hoverable elements
+- [ ] Implement smooth tooltip animations
+
+### Phase 4: Data Verification Panel
+**Goal**: Provide comprehensive view of all tool calls and extracted data
+
+#### Task 4.1: Verification Sidebar
+- [ ] Create collapsible "Data Verification" panel
+- [ ] Show recent tool calls in chronological order
+- [ ] Display key metrics extracted from responses
+- [ ] Provide filters for different data types (prices, indicators, etc.)
+
+#### Task 4.2: Smart Data Extraction
+- [ ] Extract key trading metrics from tool responses:
+  - Prices and price changes
+  - Technical indicators (RSI, MACD, etc.)
+  - Volume and market data
+  - Order book information
+- [ ] Avoid displaying large arrays (candlestick data, etc.)
+- [ ] Highlight important changes or alerts
+
+#### Task 4.3: Full Data View
+- [ ] Click citation or panel item to view full raw response
+- [ ] JSON viewer with syntax highlighting
+- [ ] Copy-to-clipboard functionality
+- [ ] Export data functionality
 
 ## Browser Compatibility Issue
 
@@ -144,78 +136,6 @@ LlamaIndex packages include Node.js-specific dependencies (fs, path, child_proce
 "errorMonitor" is not exported by "__vite-browser-external"
 Module "node:fs" has been externalized for browser compatibility
 ```
-
-### Alternative Approaches
-
-#### Option 1: Custom Agent Implementation (Recommended)
-- Build a lightweight custom agent system inspired by LlamaIndex patterns
-- Use existing MCP integration and AI client
-- Implement multi-step workflows with manual orchestration
-- Benefits: Full browser compatibility, smaller bundle size, tailored to our needs
-
-#### Option 2: Server-Side Agent Service
-- Move LlamaIndex agent to a separate Node.js service
-- WebUI communicates with agent service via HTTP/WebSocket
-- Benefits: Full LlamaIndex functionality, separation of concerns
-- Drawbacks: Additional infrastructure complexity
-
-### Recommended Path Forward
-Implement **Option 1** - Custom Agent Implementation with the following features:
-- Multi-step tool execution loops
-- Configurable workflow complexity
-- Real-time streaming and events
-- Agent specialization patterns
-- Fallback to legacy single-step mode
-
-#### 1.1 Package Installation and Setup
-- [ ] Install LlamaIndex dependencies
-  ```bash
-  pnpm add llamaindex @llamaindex/workflow @llamaindex/openai @llamaindex/tools
-  ```
-- [ ] Update TypeScript configuration for LlamaIndex compatibility
-- [ ] Add LlamaIndex types to project
-
-#### 1.2 Create New Agent Service
-- [ ] Create `src/services/llamaIndexAgent.ts`
-- [ ] Implement `LlamaIndexAgentService` class
-- [ ] Add MCP tool integration using `@llamaindex/tools/mcp`
-- [ ] Implement configuration management for agent settings
-
-#### 1.3 Configuration System
-- [ ] Extend `configService.ts` with agent-specific settings:
-  - Agent type selection (single vs multi-agent)
-  - Workflow complexity levels
-  - Tool execution timeouts
-  - Max iterations for multi-step workflows
-  - Debug/verbose logging options
-
-### Phase 2: Agent Implementation (3-4 days)
-
-#### 2.1 Single Agent Implementation
-- [ ] Create basic trading analysis agent
-- [ ] Integrate all existing MCP tools
-- [ ] Implement streaming response handling
-- [ ] Add tool call event monitoring
-- [ ] Create fallback mechanisms for tool failures
-
-#### 2.2 Multi-Agent Architecture
-- [ ] Design agent specialisations:
-  - **Technical Analysis Agent**: Price action, indicators, chart patterns
-  - **Market Structure Agent**: Order blocks, liquidity zones, market regime
-  - **Risk Management Agent**: Position sizing, risk assessment
-  - **News/Sentiment Agent**: Market sentiment analysis (future extension)
-- [ ] Implement agent handoff logic
-- [ ] Create agent coordination workflows
-
-#### 2.3 Workflow Orchestration
-- [ ] Design workflow events for complex analysis:
-  - `MarketAnalysisRequest`
-  - `TechnicalDataGathered`
-  - `StructureAnalysisComplete`
-  - `RiskAssessmentDone`
-  - `FinalRecommendation`
-- [ ] Implement conditional workflow paths
-- [ ] Add workflow state management
 
 ### Phase 3: UI Integration (2-3 days)
 
@@ -254,158 +174,10 @@ Implement **Option 1** - Custom Agent Implementation with the following features
 - [ ] Implement conversation memory
 - [ ] Add market context persistence
 - [ ] Create analysis history tracking
-- [ ] Implement learning from user feedback
 
 #### 4.3 Performance Optimisation
-- [ ] Implement tool call caching
 - [ ] Add parallel tool execution where possible
 - [ ] Optimise workflow execution paths
-- [ ] Add performance monitoring
-
-## LlamaIndex Features to Leverage
-
-### 1. Native MCP Integration
-```typescript
-import { mcp } from "@llamaindex/tools";
-
-const mcpServer = mcp({
-  url: "http://localhost:8080/mcp",
-  verbose: true,
-});
-const tools = await mcpServer.tools();
-```
-
-### 2. Agent Workflows
-```typescript
-import { agent } from "@llamaindex/workflow";
-
-const tradingAgent = agent({
-  name: "TradingAnalyst",
-  description: "Comprehensive cryptocurrency trading analysis",
-  tools: mcpTools,
-  llm: openai({ model: "gpt-4o" }),
-  systemPrompt: "You are an expert crypto trader..."
-});
-```
-
-### 3. Multi-Agent Orchestration
-```typescript
-import { multiAgent } from "@llamaindex/workflow";
-
-const analysisWorkflow = multiAgent({
-  agents: [technicalAgent, structureAgent, riskAgent],
-  rootAgent: technicalAgent,
-});
-```
-
-### 4. Streaming Events
-```typescript
-import { agentToolCallEvent, agentStreamEvent } from "@llamaindex/workflow";
-
-const events = agent.runStream(query);
-for await (const event of events) {
-  if (agentToolCallEvent.include(event)) {
-    // Show tool being called
-  }
-  if (agentStreamEvent.include(event)) {
-    // Stream response text
-  }
-}
-```
-
-### 5. Workflow State Management
-```typescript
-const { withState, getContext } = createStatefulMiddleware(() => ({
-  analysisDepth: 'standard',
-  toolsUsed: [],
-  marketConditions: null,
-}));
-```
-
-## Configuration Options
-
-### Agent Configuration
-```typescript
-interface AgentConfig {
-  // Agent behaviour
-  agentType: 'single' | 'multi';
-  workflowComplexity: 'simple' | 'standard' | 'comprehensive';
-  maxIterations: number;
-  toolTimeout: number;
-
-  // Analysis preferences
-  defaultAnalysisDepth: 'quick' | 'standard' | 'deep';
-  enableRiskAssessment: boolean;
-  enableMarketStructure: boolean;
-
-  // UI preferences
-  showWorkflowSteps: boolean;
-  showToolCalls: boolean;
-  enableDebugMode: boolean;
-  streamingEnabled: boolean;
-}
-```
-
-### Workflow Presets
-```typescript
-const WORKFLOW_PRESETS = {
-  quick: {
-    maxIterations: 2,
-    tools: ['get_ticker', 'get_kline'],
-    complexity: 'simple'
-  },
-  standard: {
-    maxIterations: 5,
-    tools: ['get_ticker', 'get_kline', 'get_ml_rsi'],
-    complexity: 'standard'
-  },
-  comprehensive: {
-    maxIterations: 10,
-    tools: 'all',
-    complexity: 'comprehensive'
-  }
-};
-```
-
-## File Structure Changes
-
-```
-webui/src/
-├── services/
-│   ├── llamaIndexAgent.ts      # New: LlamaIndex agent service
-│   ├── agentWorkflows.ts       # New: Workflow definitions
-│   ├── agentConfig.ts          # New: Agent configuration
-│   └── aiClient.ts             # Keep for fallback
-├── components/
-│   ├── AgentWorkflowView.ts    # New: Workflow visualisation
-│   ├── AgentSettings.ts        # New: Agent configuration UI
-│   └── ChatApp.ts              # Updated: Use new agent service
-├── types/
-│   ├── agent.ts                # New: Agent-specific types
-│   └── workflow.ts             # New: Workflow event types
-└── utils/
-    └── workflowHelpers.ts      # New: Workflow utilities
-```
-
-## Testing Strategy
-
-### Unit Tests
-- [ ] Test agent service initialisation
-- [ ] Test tool integration
-- [ ] Test workflow execution
-- [ ] Test configuration management
-
-### Integration Tests
-- [ ] Test MCP server integration
-- [ ] Test multi-step workflows
-- [ ] Test agent handoffs
-- [ ] Test streaming events
-
-### User Acceptance Tests
-- [ ] Test workflow presets
-- [ ] Test configuration changes
-- [ ] Test error handling
-- [ ] Test performance with complex queries
 
 ## Risk Mitigation
 
@@ -420,26 +192,3 @@ webui/src/
 - [ ] Add retry mechanisms for failed tool calls
 - [ ] Create user-friendly error messages
 - [ ] Log detailed error information for debugging
-
-## Success Metrics
-
-- [ ] Multi-step analysis workflows working correctly
-- [ ] Improved analysis quality and depth
-- [ ] Faster complex analysis completion
-- [ ] Better user experience with workflow visibility
-- [ ] Configurable complexity levels working as expected
-
-## Timeline
-
-- **Week 1**: Core infrastructure and basic agent implementation
-- **Week 2**: Multi-agent architecture and workflow orchestration
-- **Week 3**: UI integration and advanced features
-- **Week 4**: Testing, optimisation, and documentation
-
-## Next Steps
-
-1. Begin with Phase 1.1 - package installation
-2. Create basic agent service structure
-3. Test MCP integration with LlamaIndex
-4. Implement single-agent workflow
-5. Gradually add multi-agent capabilities

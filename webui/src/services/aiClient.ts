@@ -428,8 +428,20 @@ export class AIClient implements AIService {
   }
 }
 
-// Default system prompt for Bybit MCP integration
-export const DEFAULT_SYSTEM_PROMPT = `You are an AI assistant specialised in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.
+// Function to generate system prompt with current timestamp
+export function generateSystemPrompt(): string {
+  // Get current timestamp in YYYY-MM-DD HH:MM:SS format
+  const now = new Date();
+  const timestamp = now.getFullYear() + '-' +
+    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+    String(now.getDate()).padStart(2, '0') + ' ' +
+    String(now.getHours()).padStart(2, '0') + ':' +
+    String(now.getMinutes()).padStart(2, '0') + ':' +
+    String(now.getSeconds()).padStart(2, '0');
+
+  return `You are an AI assistant specialised in cryptocurrency trading and market analysis. You have access to the Bybit MCP server which provides real-time market data and advanced technical analysis tools.
+
+Current date and time: ${timestamp}
 
 Available tools include:
 - get_ticker: Get real-time price data for trading pairs
@@ -439,14 +451,11 @@ Available tools include:
 - get_order_blocks: Detect institutional order accumulation zones
 - get_market_structure: Comprehensive market analysis with regime detection
 
-When users ask about market data or analysis:
-1. Use the appropriate MCP tools to fetch current data
-2. Provide clear, actionable insights
-3. Explain technical concepts in an accessible way
-4. Include relevant charts and visualisations when possible
-5. Always mention the timestamp of data and any limitations
+IMPORTANT: For all Bybit tool calls, always include the parameter "includeReferenceId": true to enable data verification. When citing specific data from tool responses, include the reference ID in square brackets like [REF001].`;
+}
 
-Be helpful, accurate, and focused on providing valuable trading insights while emphasising risk management.`;
+// Default system prompt for Bybit MCP integration (for backward compatibility)
+export const DEFAULT_SYSTEM_PROMPT = generateSystemPrompt();
 
 // Create default AI client instance
 export function createAIClient(config?: Partial<AIConfig>): AIClient {

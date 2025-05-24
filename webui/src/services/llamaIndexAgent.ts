@@ -98,7 +98,18 @@ export class CustomAgentService {
    * Build system prompt based on configuration
    */
   private buildSystemPrompt(): string {
+    // Get current timestamp in YYYY-MM-DD HH:MM:SS format
+    const now = new Date();
+    const timestamp = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0') + ' ' +
+      String(now.getHours()).padStart(2, '0') + ':' +
+      String(now.getMinutes()).padStart(2, '0') + ':' +
+      String(now.getSeconds()).padStart(2, '0');
+
     const basePrompt = `You are an expert cryptocurrency trading assistant with access to real-time market data and advanced analysis tools.
+
+Current date and time: ${timestamp}
 
 Your capabilities include:
 - Real-time price and market data analysis
@@ -115,7 +126,9 @@ Guidelines:
 4. Include confidence levels in your analysis
 5. Consider multiple timeframes when relevant
 6. Use tools intelligently based on the user's question - don't call unnecessary tools
-7. Provide comprehensive analysis when appropriate, but be concise when a simple answer suffices`;
+7. Provide comprehensive analysis when appropriate, but be concise when a simple answer suffices
+8. IMPORTANT: For all Bybit tool calls, always include the parameter "includeReferenceId": true to enable data verification
+9. When citing specific data from tool responses, include the reference ID in square brackets like [REF001]`;
 
     return basePrompt;
   }

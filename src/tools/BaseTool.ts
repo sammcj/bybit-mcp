@@ -407,6 +407,34 @@ export abstract class BaseToolImplementation {
     }
   }
 
+  // Reference ID counter for generating unique IDs
+  private static referenceIdCounter = 0
+
+  /**
+   * Generate a unique reference ID
+   */
+  protected generateReferenceId(): string {
+    BaseToolImplementation.referenceIdCounter += 1
+    return `REF${String(BaseToolImplementation.referenceIdCounter).padStart(3, '0')}`
+  }
+
+  /**
+   * Add reference ID metadata to response if requested
+   */
+  protected addReferenceMetadata(data: any, includeReferenceId: boolean, toolName: string, endpoint?: string): any {
+    if (!includeReferenceId) {
+      return data
+    }
+
+    return {
+      ...data,
+      _referenceId: this.generateReferenceId(),
+      _timestamp: new Date().toISOString(),
+      _toolName: toolName,
+      _endpoint: endpoint
+    }
+  }
+
   protected formatResponse(data: any): CallToolResult {
     this.ensureInitialized()
     const content: TextContent = {

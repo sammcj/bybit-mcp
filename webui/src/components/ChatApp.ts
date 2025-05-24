@@ -3,7 +3,7 @@
  */
 
 import type { ChatUIMessage, ChatState, ChatMessage } from '@/types/ai';
-import { aiClient } from '@/services/aiClient';
+import { aiClient, generateSystemPrompt } from '@/services/aiClient';
 import { llamaIndexAgent } from '@/services/llamaIndexAgent';
 import { agentConfigService } from '@/services/agentConfig';
 import { mcpClient } from '@/services/mcpClient';
@@ -284,8 +284,8 @@ export class ChatApp {
         content: msg.content,
       }));
 
-      // Add system prompt
-      const systemPrompt = configService.getAIConfig().systemPrompt;
+      // Add dynamic system prompt with current timestamp
+      const systemPrompt = generateSystemPrompt();
       aiMessages = [
         { role: 'system' as const, content: systemPrompt },
         ...messages,
