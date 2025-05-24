@@ -908,11 +908,15 @@
   right: 0;
   bottom: 0;
   background-color: var(--bg-overlay);
-  display: flex;
+  display: none; /* Hidden by default */
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
   animation: fadeIn 0.2s ease-out;
+}
+
+.modal.active {
+  display: flex; /* Show when active */
 }
 
 .modal-content {
@@ -1012,6 +1016,32 @@
 
 .settings-section input:focus {
   border-color: var(--border-focus);
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md) !important;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto !important;
+  margin: 0 !important;
+  margin-top: 2px;
+}
+
+.checkbox-label span {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.checkbox-label small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
 }
 
 /* Debug Console Styles */

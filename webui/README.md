@@ -13,6 +13,7 @@ A modern, lightweight web interface for the Bybit MCP (Model Context Protocol) s
 
 ## Technology Stack
 
+- pnpm: Package manager
 - **Frontend**: Vite + Vanilla TypeScript
 - **Charts**: Lightweight Charts (TradingView) + Chart.js
 - **Styling**: CSS3 with CSS Variables

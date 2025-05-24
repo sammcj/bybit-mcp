@@ -12,8 +12,10 @@ import { chartManager } from './components/ChartManager';
 import { toolsManager } from './components/ToolsManager';
 import { analysisManager } from './components/AnalysisManager';
 import { configService } from './services/configService';
+import { agentConfigService } from './services/agentConfig';
 import { mcpClient } from './services/mcpClient';
 import { aiClient } from './services/aiClient';
+import { llamaIndexAgent } from './services/llamaIndexAgent';
 // Import logService to initialize console interception
 import './services/logService';
 
@@ -106,6 +108,16 @@ class App {
       console.warn('⚠️ AI service not reachable');
     }
 
+    // Initialize LlamaIndex agent
+    try {
+      console.log('🤖 Initializing LlamaIndex agent...');
+      await llamaIndexAgent.initialize();
+      console.log('✅ LlamaIndex agent initialized');
+    } catch (error) {
+      console.warn('⚠️ LlamaIndex agent initialization failed:', error);
+      console.log('💡 Falling back to legacy AI client');
+    }
+
     console.log('✅ Service initialization complete');
   }
 
@@ -162,6 +174,18 @@ class App {
         }
       });
     });
+
+    // Agent settings button removed - now integrated into main settings modal
+
+    // Handle agent mode toggle
+    const agentToggleBtn = document.getElementById('agent-toggle-btn');
+    if (agentToggleBtn && this.chatApp) {
+      agentToggleBtn.addEventListener('click', () => {
+        const isUsingAgent = this.chatApp!.isUsingAgent();
+        this.chatApp!.toggleAgentMode(!isUsingAgent);
+        agentToggleBtn.textContent = !isUsingAgent ? '🤖 Agent Mode' : '🔄 Legacy Mode';
+      });
+    }
   }
 
   private setupThemeToggle(): void {
@@ -258,8 +282,10 @@ class App {
 
     // Populate current settings
     const settings = configService.getSettings();
-    console.log('🔧 Opening settings modal with current settings:', settings);
+    const agentConfig = agentConfigService.getConfig();
+    console.log('🔧 Opening settings modal with current settings:', settings, agentConfig);
 
+    // AI Configuration
     const aiEndpoint = document.getElementById('ai-endpoint') as HTMLInputElement;
     const aiModel = document.getElementById('ai-model') as HTMLInputElement;
     const mcpEndpoint = document.getElementById('mcp-endpoint') as HTMLInputElement;
@@ -277,6 +303,33 @@ class App {
       console.log('📝 Set MCP endpoint field to:', settings.mcp.endpoint);
     }
 
+    // Agent Configuration
+    const agentModeEnabled = document.getElementById('agent-mode-enabled') as HTMLInputElement;
+    const maxIterations = document.getElementById('max-iterations') as HTMLInputElement;
+    const toolTimeout = document.getElementById('tool-timeout') as HTMLInputElement;
+    const showWorkflowSteps = document.getElementById('show-workflow-steps') as HTMLInputElement;
+    const showToolCalls = document.getElementById('show-tool-calls') as HTMLInputElement;
+    const enableDebugMode = document.getElementById('enable-debug-mode') as HTMLInputElement;
+
+    if (agentModeEnabled) {
+      agentModeEnabled.checked = this.chatApp?.isAgentModeEnabled() || false;
+    }
+    if (maxIterations) {
+      maxIterations.value = agentConfig.maxIterations.toString();
+    }
+    if (toolTimeout) {
+      toolTimeout.value = agentConfig.toolTimeout.toString();
+    }
+    if (showWorkflowSteps) {
+      showWorkflowSteps.checked = agentConfig.showWorkflowSteps;
+    }
+    if (showToolCalls) {
+      showToolCalls.checked = agentConfig.showToolCalls;
+    }
+    if (enableDebugMode) {
+      enableDebugMode.checked = agentConfig.enableDebugMode;
+    }
+
     modal.classList.remove('hidden');
   }
 
@@ -285,10 +338,19 @@ class App {
     const aiModel = document.getElementById('ai-model') as HTMLInputElement;
     const mcpEndpoint = document.getElementById('mcp-endpoint') as HTMLInputElement;
 
+    // Agent Configuration elements
+    const agentModeEnabled = document.getElementById('agent-mode-enabled') as HTMLInputElement;
+    const maxIterations = document.getElementById('max-iterations') as HTMLInputElement;
+    const toolTimeout = document.getElementById('tool-timeout') as HTMLInputElement;
+    const showWorkflowSteps = document.getElementById('show-workflow-steps') as HTMLInputElement;
+    const showToolCalls = document.getElementById('show-tool-calls') as HTMLInputElement;
+    const enableDebugMode = document.getElementById('enable-debug-mode') as HTMLInputElement;
+
     console.log('💾 Saving settings from modal...');
     console.log('AI Endpoint:', aiEndpoint?.value);
     console.log('AI Model:', aiModel?.value);
     console.log('MCP Endpoint:', mcpEndpoint?.value);
+    console.log('Agent Mode:', agentModeEnabled?.checked);
 
     const currentSettings = configService.getSettings();
     const updates: Partial<typeof currentSettings> = {};
@@ -326,6 +388,24 @@ class App {
       this.initializeServices().catch(console.error);
     } else {
       console.log('ℹ️ No settings changes to save');
+    }
+
+    // Save agent configuration
+    const agentConfig = {
+      maxIterations: parseInt(maxIterations?.value || '5'),
+      toolTimeout: parseInt(toolTimeout?.value || '30000'),
+      showWorkflowSteps: showWorkflowSteps?.checked || false,
+      showToolCalls: showToolCalls?.checked || false,
+      enableDebugMode: enableDebugMode?.checked || false,
+      streamingEnabled: true // Always enabled
+    };
+
+    console.log('🤖 Saving agent config:', agentConfig);
+    agentConfigService.updateConfig(agentConfig);
+
+    // Update agent mode in chat app
+    if (this.chatApp && agentModeEnabled) {
+      this.chatApp.toggleAgentMode(agentModeEnabled.checked);
     }
 
     // Close modal

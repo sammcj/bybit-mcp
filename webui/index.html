@@ -184,6 +184,33 @@
             <label for="mcp-endpoint">MCP Endpoint:</label>
             <input type="url" id="mcp-endpoint" placeholder="http://localhost:8080" />
           </div>
+          <div class="settings-section">
+            <h3>Agent Settings</h3>
+            <label class="checkbox-label">
+              <input type="checkbox" id="agent-mode-enabled" />
+              <span>Enable Agent Mode</span>
+              <small>Use multi-step reasoning agent instead of simple AI chat</small>
+            </label>
+            <label for="max-iterations">Max Iterations:</label>
+            <input type="number" id="max-iterations" min="1" max="20" value="5" />
+            <label for="tool-timeout">Tool Timeout (ms):</label>
+            <input type="number" id="tool-timeout" min="5000" max="120000" step="1000" value="30000" />
+            <label class="checkbox-label">
+              <input type="checkbox" id="show-workflow-steps" />
+              <span>Show Workflow Steps</span>
+              <small>Display agent reasoning process</small>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="show-tool-calls" />
+              <span>Show Tool Calls</span>
+              <small>Display tool execution details</small>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="enable-debug-mode" />
+              <span>Debug Mode</span>
+              <small>Enable verbose logging</small>
+            </label>
+          </div>
         </div>
         <div class="modal-footer">
           <button id="save-settings" class="save-btn">Save Settings</button>
