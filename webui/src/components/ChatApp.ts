@@ -238,6 +238,13 @@ export class ChatApp {
           // Update the streaming message content
           assistantMessage.content += chunk;
           contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '') + '<span class="cursor">|</span>';
+
+          // Only attach citation listeners if the content contains citation patterns
+          // This avoids excessive listener attachment during streaming
+          if (assistantMessage.content && assistantMessage.content.includes('[REF') && messageElement) {
+            this.addCitationEventListeners(messageElement);
+          }
+
           this.scrollToBottom();
         },
         (event: WorkflowEvent) => {
@@ -246,9 +253,14 @@ export class ChatApp {
         }
       );
 
-      // Remove streaming cursor
+      // Remove streaming cursor and finalize
       assistantMessage.isStreaming = false;
       contentElement.innerHTML = this.formatMessageContent(assistantMessage.content || '');
+
+      // Final citation event listener attachment - always do this at the end
+      if (messageElement) {
+        this.addCitationEventListeners(messageElement);
+      }
 
     } catch (error) {
       // Update message with error
@@ -430,18 +442,22 @@ export class ChatApp {
    */
   private addCitationEventListeners(messageElement: HTMLElement): void {
     const citationRefs = messageElement.querySelectorAll('.citation-ref');
-    console.log(`🎯 Found ${citationRefs.length} citation references to attach listeners to`);
+
+    // Only log if we find citations to avoid spam
+    if (citationRefs.length > 0) {
+      console.log(`🎯 Found ${citationRefs.length} citation references to attach listeners to`);
+    }
 
     citationRefs.forEach((citationRef, index) => {
       const element = citationRef as HTMLElement;
       const referenceId = element.dataset.referenceId;
 
-      console.log(`🎯 Processing citation ${index + 1}: referenceId = ${referenceId}`);
-
       if (!referenceId) {
         console.log('❌ No referenceId found for citation element');
         return;
       }
+
+      console.log(`🎯 Attaching listeners to citation: ${referenceId}`);
 
       // Add click handler
       element.addEventListener('click', () => {
@@ -475,6 +491,9 @@ export class ChatApp {
           this.handleCitationClick(referenceId);
         }
       });
+
+      // Mark as having listeners attached
+      element.dataset.listenersAttached = 'true';
 
       console.log(`✅ Event listeners attached for citation: ${referenceId}`);
     });
