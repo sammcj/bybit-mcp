@@ -230,6 +230,7 @@ export class MCPClient {
       console.log(`✅ Tool ${name} result:`, result);
 
       // Process tool response for citation storage
+      console.log(`🔍 About to process tool response for citations...`);
       citationStore.processToolResponse(result);
 
       return result as MCPToolResponse<T>;

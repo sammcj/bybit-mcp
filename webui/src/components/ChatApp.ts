@@ -425,15 +425,22 @@ export class ChatApp {
    */
   private addCitationEventListeners(messageElement: HTMLElement): void {
     const citationRefs = messageElement.querySelectorAll('.citation-ref');
+    console.log(`🎯 Found ${citationRefs.length} citation references to attach listeners to`);
 
-    citationRefs.forEach(citationRef => {
+    citationRefs.forEach((citationRef, index) => {
       const element = citationRef as HTMLElement;
       const referenceId = element.dataset.referenceId;
 
-      if (!referenceId) return;
+      console.log(`🎯 Processing citation ${index + 1}: referenceId = ${referenceId}`);
+
+      if (!referenceId) {
+        console.log('❌ No referenceId found for citation element');
+        return;
+      }
 
       // Add click handler
       element.addEventListener('click', () => {
+        console.log(`🖱️ Citation clicked: ${referenceId}`);
         this.handleCitationClick(referenceId);
       });
 
@@ -442,6 +449,7 @@ export class ChatApp {
       let tooltip: HTMLElement | null = null;
 
       element.addEventListener('mouseenter', () => {
+        console.log(`🖱️ Mouse entered citation: ${referenceId}`);
         tooltipTimeout = setTimeout(() => {
           tooltip = this.showCitationTooltip(element, referenceId);
         }, 500); // Show tooltip after 500ms hover
@@ -462,6 +470,8 @@ export class ChatApp {
           this.handleCitationClick(referenceId);
         }
       });
+
+      console.log(`✅ Event listeners attached for citation: ${referenceId}`);
     });
   }
 
@@ -469,10 +479,13 @@ export class ChatApp {
    * Handle citation click to show full data
    */
   private handleCitationClick(referenceId: string): void {
+    console.log(`🔍 Handling citation click for: ${referenceId}`);
     const tooltipData = citationProcessor.getCitationTooltipData(referenceId);
 
+    console.log(`📊 Citation tooltip data:`, tooltipData);
+
     if (!tooltipData) {
-      console.warn(`No citation data found for ${referenceId}`);
+      console.warn(`❌ No citation data found for ${referenceId}`);
       return;
     }
 
