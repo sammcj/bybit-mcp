@@ -27,6 +27,8 @@ export class ChatApp {
   private fullConversationHistory: ChatMessage[] = []; // Track complete conversation including tool calls
   private workflowEventsContainer: HTMLElement | null = null;
   private useAgent: boolean = true; // Toggle between agent and legacy client
+  private lastCitationAttachTime: number = 0;
+  private citationAttachThrottle: number = 300; // Throttle to 300ms
 
   constructor() {
     // Get DOM elements
@@ -242,7 +244,7 @@ export class ChatApp {
           // Only attach citation listeners if the content contains citation patterns
           // This avoids excessive listener attachment during streaming
           if (assistantMessage.content && assistantMessage.content.includes('[REF') && messageElement) {
-            this.addCitationEventListeners(messageElement);
+            this.addCitationEventListenersThrottled(messageElement);
           }
 
           this.scrollToBottom();
@@ -438,6 +440,18 @@ export class ChatApp {
   }
 
   /**
+   * Throttled version of addCitationEventListeners to reduce spam during streaming
+   */
+  private addCitationEventListenersThrottled(messageElement: HTMLElement): void {
+    const now = Date.now();
+    if (now - this.lastCitationAttachTime < this.citationAttachThrottle) {
+      return; // Skip if called too recently
+    }
+    this.lastCitationAttachTime = now;
+    this.addCitationEventListeners(messageElement);
+  }
+
+  /**
    * Add event listeners for citation interactions
    */
   private addCitationEventListeners(messageElement: HTMLElement): void {
@@ -525,14 +539,31 @@ export class ChatApp {
     tooltip.className = 'citation-tooltip-container';
     tooltip.innerHTML = citationProcessor.createTooltipContent(tooltipData);
 
+    // Add to DOM first to get dimensions
+    document.body.appendChild(tooltip);
+
     // Position tooltip relative to the citation element
     const rect = element.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    // Calculate position (prefer below, but above if no space)
+    let top = rect.bottom + window.scrollY + 8;
+    let left = rect.left + window.scrollX;
+
+    // Adjust if tooltip would go off screen
+    if (left + tooltipRect.width > window.innerWidth) {
+      left = window.innerWidth - tooltipRect.width - 10;
+    }
+
+    if (top + tooltipRect.height > window.innerHeight + window.scrollY) {
+      top = rect.top + window.scrollY - tooltipRect.height - 8;
+    }
+
     tooltip.style.position = 'absolute';
-    tooltip.style.top = `${rect.bottom + 5}px`;
-    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
     tooltip.style.zIndex = '1000';
 
-    document.body.appendChild(tooltip);
     return tooltip;
   }
 
