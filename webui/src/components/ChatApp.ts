@@ -443,9 +443,9 @@ export class ChatApp {
   private addCitationEventListeners(messageElement: HTMLElement): void {
     const citationRefs = messageElement.querySelectorAll('.citation-ref');
 
-    // Only log if we find citations to avoid spam
+    // Reduce logging spam - only log once when citations are found
     if (citationRefs.length > 0) {
-      console.log(`🎯 Found ${citationRefs.length} citation references to attach listeners to`);
+      console.log(`🎯 Attaching listeners to ${citationRefs.length} citation references`);
     }
 
     citationRefs.forEach((citationRef, index) => {
@@ -453,11 +453,11 @@ export class ChatApp {
       const referenceId = element.dataset.referenceId;
 
       if (!referenceId) {
-        console.log('❌ No referenceId found for citation element');
         return;
       }
 
-      console.log(`🎯 Attaching listeners to citation: ${referenceId}`);
+      // Remove default browser tooltip to avoid double tooltips
+      element.removeAttribute('title');
 
       // Add click handler
       element.addEventListener('click', () => {
@@ -470,7 +470,6 @@ export class ChatApp {
       let tooltip: HTMLElement | null = null;
 
       element.addEventListener('mouseenter', () => {
-        console.log(`🖱️ Mouse entered citation: ${referenceId}`);
         tooltipTimeout = setTimeout(() => {
           tooltip = this.showCitationTooltip(element, referenceId);
         }, 500); // Show tooltip after 500ms hover
@@ -491,8 +490,6 @@ export class ChatApp {
           this.handleCitationClick(referenceId);
         }
       });
-
-      console.log(`✅ Event listeners attached for citation: ${referenceId}`);
     });
   }
 
