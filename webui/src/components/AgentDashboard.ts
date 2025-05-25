@@ -2,7 +2,7 @@
  * Agent Dashboard - Shows memory, performance, and analysis statistics
  */
 
-import { llamaIndexAgent } from '@/services/llamaIndexAgent';
+import { multiStepAgent } from '@/services/multiStepAgent';
 
 export class AgentDashboard {
   private container: HTMLElement;
@@ -14,7 +14,7 @@ export class AgentDashboard {
     if (!this.container) {
       throw new Error(`Container element with id "${containerId}" not found`);
     }
-    
+
     this.initialize();
   }
 
@@ -38,7 +38,7 @@ export class AgentDashboard {
             </button>
           </div>
         </div>
-        
+
         <div class="dashboard-content">
           <!-- Memory Statistics -->
           <div class="dashboard-section">
@@ -162,7 +162,7 @@ export class AgentDashboard {
   public toggleVisibility(): void {
     this.isVisible = !this.isVisible;
     const dashboard = this.container.querySelector('.agent-dashboard');
-    
+
     if (this.isVisible) {
       dashboard?.classList.remove('hidden');
       dashboard?.classList.add('visible');
@@ -193,18 +193,18 @@ export class AgentDashboard {
 
   private updateMemoryStats(): void {
     try {
-      const memoryStats = llamaIndexAgent.getMemoryStats();
-      
+      const memoryStats = multiStepAgent.getMemoryStats();
+
       const conversationsEl = this.container.querySelector('#memory-conversations');
       const contextsEl = this.container.querySelector('#memory-contexts');
       const analysesEl = this.container.querySelector('#memory-analyses');
       const symbolsEl = this.container.querySelector('#memory-symbols');
-      
+
       if (conversationsEl) conversationsEl.textContent = memoryStats.conversations.toString();
       if (contextsEl) contextsEl.textContent = memoryStats.marketContexts.toString();
       if (analysesEl) analysesEl.textContent = memoryStats.analysisHistory.toString();
       if (symbolsEl) symbolsEl.textContent = memoryStats.totalSymbols.toString();
-      
+
     } catch (error) {
       console.warn('Failed to update memory stats:', error);
     }
@@ -212,13 +212,13 @@ export class AgentDashboard {
 
   private updatePerformanceStats(): void {
     try {
-      const perfStats = llamaIndexAgent.getPerformanceStats();
-      
+      const perfStats = multiStepAgent.getPerformanceStats();
+
       const successRateEl = this.container.querySelector('#perf-success-rate');
       const avgTimeEl = this.container.querySelector('#perf-avg-time');
       const savingsEl = this.container.querySelector('#perf-savings');
       const toolCountEl = this.container.querySelector('#perf-tool-count');
-      
+
       if (successRateEl) {
         successRateEl.textContent = `${(perfStats.successRate * 100).toFixed(1)}%`;
       }
@@ -231,7 +231,7 @@ export class AgentDashboard {
       if (toolCountEl) {
         toolCountEl.textContent = perfStats.toolCount.toString();
       }
-      
+
     } catch (error) {
       console.warn('Failed to update performance stats:', error);
     }
@@ -239,9 +239,9 @@ export class AgentDashboard {
 
   private updateRecentAnalysis(): void {
     try {
-      const recentAnalysis = llamaIndexAgent.getAnalysisHistory(undefined, 5);
+      const recentAnalysis = multiStepAgent.getAnalysisHistory(undefined, 5);
       const listContainer = this.container.querySelector('#recent-analysis');
-      
+
       if (!listContainer) return;
 
       if (recentAnalysis.length === 0) {
@@ -270,7 +270,7 @@ export class AgentDashboard {
       `).join('');
 
       listContainer.innerHTML = analysisHtml;
-      
+
     } catch (error) {
       console.warn('Failed to update recent analysis:', error);
     }
@@ -278,30 +278,30 @@ export class AgentDashboard {
 
   private clearMemory(): void {
     if (confirm('Are you sure you want to clear all agent memory? This action cannot be undone.')) {
-      llamaIndexAgent.clearMemory();
+      multiStepAgent.clearMemory();
       this.refreshDashboard();
       this.showToast('Memory cleared successfully!');
     }
   }
 
   private startNewConversation(): void {
-    llamaIndexAgent.startNewConversation();
+    multiStepAgent.startNewConversation();
     this.showToast('New conversation started!');
   }
 
   private exportData(): void {
     try {
       const data = {
-        memoryStats: llamaIndexAgent.getMemoryStats(),
-        performanceStats: llamaIndexAgent.getPerformanceStats(),
-        recentAnalysis: llamaIndexAgent.getAnalysisHistory(undefined, 20),
+        memoryStats: multiStepAgent.getMemoryStats(),
+        performanceStats: multiStepAgent.getPerformanceStats(),
+        recentAnalysis: multiStepAgent.getAnalysisHistory(undefined, 20),
         exportedAt: new Date().toISOString()
       };
 
       const dataStr = JSON.stringify(data, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      
+
       const a = document.createElement('a');
       a.href = url;
       a.download = `agent-data-${new Date().toISOString().split('T')[0]}.json`;
@@ -309,9 +309,9 @@ export class AgentDashboard {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       this.showToast('Data exported successfully!');
-      
+
     } catch (error) {
       console.error('Failed to export data:', error);
       this.showToast('Failed to export data', 'error');
@@ -322,12 +322,12 @@ export class AgentDashboard {
     const toast = document.createElement('div');
     toast.className = `dashboard-toast toast-${type}`;
     toast.textContent = message;
-    
+
     document.body.appendChild(toast);
-    
+
     // Animate in
     setTimeout(() => toast.classList.add('show'), 10);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
       toast.classList.remove('show');
@@ -338,15 +338,15 @@ export class AgentDashboard {
   private getTimeAgo(timestamp: number): string {
     const now = Date.now();
     const diff = now - timestamp;
-    
+
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (seconds < 60) return `${seconds}s ago`;
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
-    
+
     return new Date(timestamp).toLocaleDateString();
   }
 

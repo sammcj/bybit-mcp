@@ -1,5 +1,5 @@
 /**
- * Agent-specific types for LlamaIndex integration
+ * Agent-specific types for integration
  */
 
 // Simplified agent configuration - removed complex options

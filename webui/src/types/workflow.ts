@@ -1,5 +1,5 @@
 /**
- * Workflow event types and utilities for LlamaIndex agent workflows
+ * Workflow event types and utilities for agent workflows
  */
 
 // Base workflow event interface
@@ -195,7 +195,7 @@ export interface AgentDecisionEvent extends BaseWorkflowEvent {
 }
 
 // Union type for all workflow events
-export type WorkflowEvent = 
+export type WorkflowEvent =
   | MarketAnalysisRequestEvent
   | TechnicalDataGatheredEvent
   | StructureAnalysisCompleteEvent
@@ -239,7 +239,7 @@ export class WorkflowEventEmitter {
     if (listeners) {
       listeners.forEach(listener => listener(event));
     }
-    
+
     // Also emit to 'all' listeners
     const allListeners = this.listeners.get('all');
     if (allListeners) {

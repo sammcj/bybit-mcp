@@ -1,5 +1,5 @@
 /**
- * Custom agent service for enhanced agentic capabilities
+ * Multi-step agent service for enhanced agentic capabilities
  * Implements multi-step tool calling and workflow orchestration
  */
 
@@ -14,7 +14,7 @@ import { performanceOptimiser } from './performanceOptimiser';
 import { systemPromptService } from './systemPrompt';
 import type { ChatMessage } from '@/types/ai';
 
-export class CustomAgentService {
+export class MultiStepAgentService {
   private availableTools: any[] = [];
   private isInitialized = false;
   private eventEmitter: WorkflowEventEmitter;
@@ -40,7 +40,7 @@ export class CustomAgentService {
     if (this.isInitialized) return;
 
     try {
-      console.log('🤖 Initializing LlamaIndex Agent Service...');
+      console.log('🤖 Initializing Multi-Step Agent Service...');
 
       // Load MCP tools
       await this.loadMCPTools();
@@ -54,10 +54,10 @@ export class CustomAgentService {
       });
 
       this.isInitialized = true;
-      console.log('✅ LlamaIndex Agent Service initialized successfully');
+      console.log('✅ Multi-Step Agent Service initialized successfully');
 
     } catch (error) {
-      console.error('❌ Failed to initialize LlamaIndex Agent Service:', error);
+      console.error('❌ Failed to initialize Multi-Step Agent Service:', error);
 
       agentConfigService.updateState({
         isProcessing: false
@@ -91,10 +91,10 @@ export class CustomAgentService {
    * Initialize agent system
    */
   private async initializeAgents(): Promise<void> {
-    console.log('🤖 Initializing custom agent system...');
+    console.log('🤖 Initializing multi-step agent system...');
 
     // Agent system is ready - we'll use the existing AI client with multi-step logic
-    console.log('✅ Custom agent system initialized');
+    console.log('✅ Multi-step agent system initialized');
   }
 
   /**
@@ -181,7 +181,7 @@ export class CustomAgentService {
       return result;
 
     } catch (error) {
-      console.error('❌ Agent chat failed:', error);
+      console.error('❌ Multi-step agent chat failed:', error);
       agentConfigService.recordFailure();
 
       agentConfigService.updateState({
@@ -263,7 +263,7 @@ export class CustomAgentService {
             content: latestAssistant.content
           });
 
-          console.log(`✅ Agent completed in ${iteration} iterations`);
+          console.log(`✅ Multi-step agent completed in ${iteration} iterations`);
           return latestAssistant.content;
         } else {
           console.log(`⚠️ Received placeholder content: "${trimmedContent}", continuing iteration...`);
@@ -282,7 +282,7 @@ export class CustomAgentService {
     }
 
     // Max iterations reached
-    const fallbackResponse = 'I apologize, but I reached the maximum number of reasoning steps. Let me provide what I can based on the analysis so far.';
+    const fallbackResponse = 'I apologise, but I reached the maximum number of reasoning steps. Let me provide what I can based on the analysis so far.';
 
     this.conversationHistory.push({
       role: 'assistant',
@@ -347,7 +347,7 @@ export class CustomAgentService {
       agentConfigService.recordQuery(duration, toolCallsCount);
 
     } catch (error) {
-      console.error('❌ Agent stream chat failed:', error);
+      console.error('❌ Multi-step agent stream chat failed:', error);
       agentConfigService.recordFailure();
 
       agentConfigService.updateState({
@@ -404,18 +404,18 @@ export class CustomAgentService {
   // when tool response interception is added to the agent loop
 
   /**
-   * Reinitialize agents when configuration changes
+   * Reinitialise agents when configuration changes
    */
   private async reinitializeAgents(): Promise<void> {
     if (!this.isInitialized) return;
 
-    console.log('🔄 Reinitializing agents due to configuration change...');
+    console.log('🔄 Reinitialising multi-step agents due to configuration change...');
 
     try {
       await this.initializeAgents();
-      console.log('✅ Agents reinitialized successfully');
+      console.log('✅ Multi-step agents reinitialised successfully');
     } catch (error) {
-      console.error('❌ Failed to reinitialize agents:', error);
+      console.error('❌ Failed to reinitialise multi-step agents:', error);
     }
   }
 
@@ -457,7 +457,7 @@ export class CustomAgentService {
     agentMemory.clearAllMemory();
     this.conversationHistory = [];
     this.currentConversationId = undefined;
-    console.log('🧹 Agent memory cleared');
+    console.log('🧹 Multi-step agent memory cleared');
   }
 
   /**
@@ -471,4 +471,4 @@ export class CustomAgentService {
 }
 
 // Singleton instance
-export const llamaIndexAgent = new CustomAgentService();
+export const multiStepAgent = new MultiStepAgentService();

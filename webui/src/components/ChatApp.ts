@@ -4,7 +4,7 @@
 
 import type { ChatUIMessage, ChatState, ChatMessage } from '@/types/ai';
 import { aiClient, generateSystemPrompt } from '@/services/aiClient';
-import { llamaIndexAgent } from '@/services/llamaIndexAgent';
+import { multiStepAgent } from '@/services/multiStepAgent';
 import { agentConfigService } from '@/services/agentConfig';
 import { mcpClient } from '@/services/mcpClient';
 import { configService } from '@/services/configService';
@@ -100,7 +100,7 @@ export class ChatApp {
       const [aiConnected, mcpConnected, agentConnected] = await Promise.all([
         aiClient.isConnected(),
         mcpClient.isConnected(),
-        llamaIndexAgent.isConnected(),
+        multiStepAgent.isConnected(),
       ]);
 
       if (this.useAgent) {
@@ -180,7 +180,7 @@ export class ChatApp {
       console.log('💬 Starting chat request...');
 
       if (this.useAgent) {
-        // Use LlamaIndex agent with streaming
+        // Use multi-step agent with streaming
         await this.handleAgentChat(messageContent);
       } else {
         // Use legacy AI client
@@ -215,10 +215,10 @@ export class ChatApp {
   }
 
   /**
-   * Handle chat using LlamaIndex agent with streaming and workflow events
+   * Handle chat using multi-step agent with streaming and workflow events
    */
   private async handleAgentChat(messageContent: string): Promise<void> {
-    console.log('🤖 Using LlamaIndex agent...');
+    console.log('🤖 Using multi-step agent...');
 
     // Create assistant message for streaming
     const assistantMessage: ChatUIMessage = {
@@ -240,7 +240,7 @@ export class ChatApp {
 
     try {
       // Stream chat with the agent
-      await llamaIndexAgent.streamChat(
+      await multiStepAgent.streamChat(
         messageContent,
         (chunk: string) => {
           // Update the streaming message content
@@ -695,6 +695,6 @@ export class ChatApp {
   }
 
   public getAgentState() {
-    return llamaIndexAgent.getState();
+    return multiStepAgent.getState();
   }
 }

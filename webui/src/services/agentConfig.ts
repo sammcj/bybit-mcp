@@ -1,5 +1,5 @@
 /**
- * Agent configuration service for managing LlamaIndex agent settings
+ * Agent configuration service for managing agent settings
  */
 
 import type {

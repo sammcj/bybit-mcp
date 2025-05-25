@@ -17,7 +17,7 @@ import { configService } from './services/configService';
 import { agentConfigService } from './services/agentConfig';
 import { mcpClient } from './services/mcpClient';
 import { aiClient } from './services/aiClient';
-import { llamaIndexAgent } from './services/llamaIndexAgent';
+import { multiStepAgent } from './services/multiStepAgent';
 // Import logService to initialize console interception
 import './services/logService';
 
@@ -118,13 +118,13 @@ class App {
       console.warn('⚠️ AI service not reachable');
     }
 
-    // Initialize LlamaIndex agent
+    // Initialize multi-step agent
     try {
-      console.log('🤖 Initializing LlamaIndex agent...');
-      await llamaIndexAgent.initialize();
-      console.log('✅ LlamaIndex agent initialized');
+      console.log('🤖 Initializing multi-step agent...');
+      await multiStepAgent.initialize();
+      console.log('✅ Multi-step agent initialized');
     } catch (error) {
-      console.warn('⚠️ LlamaIndex agent initialization failed:', error);
+      console.warn('⚠️ Multi-step agent initialization failed:', error);
       console.log('💡 Falling back to legacy AI client');
     }
 
