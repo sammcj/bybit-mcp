@@ -265,6 +265,7 @@ pnpm inspector
 ```
 
 Returns detailed information about a trading instrument including:
+
 - Base and quote currencies
 - Trading status
 - Lot size filters (min/max order quantities)
