@@ -31,6 +31,7 @@ export class SystemPromptService {
    * Generate the complete system prompt with all components
    */
   public async generateSystemPrompt(config: SystemPromptConfig = {}): Promise<string> {
+    console.log('🎯 Generating system prompt with dynamic tools...');
     const {
       includeTimestamp = true,
       includeTools = true,

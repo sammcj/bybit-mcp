@@ -243,7 +243,8 @@ export class AIClient implements AIService {
       // Add tool results to conversation
       conversationMessages.push(...toolResults);
 
-      // Get final response with tool results
+      // Get final response with tool results - reuse the same conversation context
+      console.log('🔄 Getting final response with tool results (system prompt already included)');
       response = await this.chat(conversationMessages);
     }
 

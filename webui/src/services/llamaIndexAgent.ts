@@ -202,8 +202,10 @@ export class CustomAgentService {
     const maxIterations = this.currentConfig.maxIterations;
     let iteration = 0;
 
-    // Prepare messages with system prompt and tools
+    // Build system prompt once and cache it for this conversation
     const systemPrompt = await this.buildSystemPrompt(symbol);
+    console.log('🎯 System prompt generated once for conversation');
+
     const messages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...this.conversationHistory
@@ -239,8 +241,8 @@ export class CustomAgentService {
         // Update conversation history with the complete response
         this.conversationHistory = response.slice(1); // Remove system message
 
-        // Continue the loop for next iteration
-        messages.length = 1; // Keep only system message
+        // Continue the loop for next iteration - rebuild messages with cached system prompt
+        messages.length = 1; // Keep only system message (already cached)
         messages.push(...this.conversationHistory);
 
         continue;
