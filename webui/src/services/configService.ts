@@ -7,25 +7,39 @@ import { systemPromptService } from './systemPrompt';
 
 const STORAGE_KEY = 'bybit-mcp-webui-settings';
 
-const DEFAULT_SETTINGS: ChatSettings = {
-  ai: {
-    endpoint: 'http://localhost:11434',
-    model: 'qwen3-30b-a3b-ud-128k-nothink:q4_k_xl',
-    temperature: 0.7,
-    maxTokens: 2048,
-    systemPrompt: systemPromptService.generateLegacySystemPrompt(),
-  },
-  mcp: {
-    endpoint: 'http://localhost:8080',
-    timeout: 30000,
-  },
-  ui: {
-    theme: 'auto',
-    fontSize: 'medium',
-    showTimestamps: true,
-    enableSounds: false,
-  },
-};
+// Get environment-based defaults
+function getDefaultSettings(): ChatSettings {
+  // Check for environment variables (available in build-time or runtime)
+  const ollamaHost = (typeof window !== 'undefined' && (window as any).__OLLAMA_HOST__) ||
+                    (typeof process !== 'undefined' && process.env?.OLLAMA_HOST) ||
+                    'http://localhost:11434';
+
+  const mcpEndpoint = (typeof window !== 'undefined' && (window as any).__MCP_ENDPOINT__) ||
+                      (typeof process !== 'undefined' && process.env?.MCP_ENDPOINT) ||
+                      ''; // Empty means use current origin in production
+
+  return {
+    ai: {
+      endpoint: ollamaHost,
+      model: 'qwen3-30b-a3b-ud-128k-nothink:q4_k_xl',
+      temperature: 0.7,
+      maxTokens: 2048,
+      systemPrompt: systemPromptService.generateLegacySystemPrompt(),
+    },
+    mcp: {
+      endpoint: mcpEndpoint,
+      timeout: 30000,
+    },
+    ui: {
+      theme: 'auto',
+      fontSize: 'medium',
+      showTimestamps: true,
+      enableSounds: false,
+    },
+  };
+}
+
+const DEFAULT_SETTINGS: ChatSettings = getDefaultSettings();
 
 export class ConfigService {
   private settings: ChatSettings;

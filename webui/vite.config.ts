@@ -2,6 +2,11 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
 export default defineConfig({
+  define: {
+    // Inject environment variables at build time
+    '__OLLAMA_HOST__': JSON.stringify(process.env.OLLAMA_HOST || 'http://localhost:11434'),
+    '__MCP_ENDPOINT__': JSON.stringify(process.env.MCP_ENDPOINT || ''), // Empty means use current origin
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

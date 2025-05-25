@@ -23,14 +23,34 @@ export class MCPClient {
   private tools: MCPTool[] = [];
   private connected: boolean = false;
 
-  constructor(baseUrl: string = 'http://localhost:8080', timeout: number = 30000) {
-    // Use proxy in development, direct URL in production
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      this.baseUrl = '/api/mcp'; // Use Vite proxy in development
+  constructor(baseUrl: string = '', timeout: number = 30000) {
+    // Determine the correct base URL based on environment
+    if (typeof window !== 'undefined') {
+      if (window.location.hostname === 'localhost' && window.location.port === '3000') {
+        // Development mode with Vite dev server
+        this.baseUrl = '/api/mcp'; // Use Vite proxy in development
+      } else if (baseUrl && baseUrl !== '') {
+        // Explicit base URL provided
+        this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+      } else {
+        // Production mode or Docker - use current origin
+        this.baseUrl = window.location.origin;
+      }
     } else {
-      this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+      // Server-side or fallback
+      this.baseUrl = baseUrl || 'http://localhost:8080';
+      this.baseUrl = this.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     }
     this.timeout = timeout;
+
+    console.log('🔧 MCP Client initialized with baseUrl:', this.baseUrl);
+    console.log('🔧 Environment check:', {
+      hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side',
+      port: typeof window !== 'undefined' ? window.location.port : 'server-side',
+      origin: typeof window !== 'undefined' ? window.location.origin : 'server-side',
+      providedBaseUrl: baseUrl,
+      finalBaseUrl: this.baseUrl
+    });
   }
 
   /**
@@ -324,8 +344,34 @@ export class MCPClient {
   }
 }
 
-// Create a singleton instance
-export const mcpClient = new MCPClient();
+// Create a singleton instance with environment-aware defaults
+const getDefaultMCPUrl = (): string => {
+  // Check for build-time injected environment variable
+  const envEndpoint = (typeof window !== 'undefined' && (window as any).__MCP_ENDPOINT__) || '';
+
+  console.log('🔧 MCP URL Detection:', {
+    envEndpoint,
+    isWindow: typeof window !== 'undefined',
+    windowMcpEndpoint: typeof window !== 'undefined' ? (window as any).__MCP_ENDPOINT__ : 'N/A'
+  });
+
+  if (envEndpoint && envEndpoint !== '') {
+    console.log('🔧 Using explicit MCP endpoint:', envEndpoint);
+    return envEndpoint;
+  }
+
+  // In browser, use current origin by default (for Docker/Traefik)
+  if (typeof window !== 'undefined') {
+    console.log('🔧 Using current origin for MCP endpoint');
+    return ''; // Empty string means use current origin
+  }
+
+  // Server-side fallback
+  console.log('🔧 Using server-side fallback for MCP endpoint');
+  return 'http://localhost:8080';
+};
+
+export const mcpClient = new MCPClient(getDefaultMCPUrl());
 
 // Convenience functions for common operations
 export async function getTicker(symbol: string, category?: 'spot' | 'linear' | 'inverse' | 'option') {

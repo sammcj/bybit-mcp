@@ -54,8 +54,12 @@ COPY . .
 # Build MCP Server (run tsc manually to avoid prepare script issues)
 RUN npx tsc && node -e "require('fs').chmodSync('build/index.js', '755')"
 
-# Build WebUI
+# Build WebUI with environment variables
 WORKDIR /app/webui
+ARG OLLAMA_HOST
+ARG MCP_ENDPOINT
+ENV OLLAMA_HOST=${OLLAMA_HOST}
+ENV MCP_ENDPOINT=${MCP_ENDPOINT}
 RUN pnpm build
 
 # Install only production dependencies for final stage

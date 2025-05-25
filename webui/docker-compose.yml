@@ -13,6 +13,9 @@ services:
       context: ..
       dockerfile: webui/Dockerfile
       target: production
+      args:
+        - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
+        - MCP_ENDPOINT=${MCP_ENDPOINT:-}
     image: bybit-mcp-webui:latest
     container_name: bybit-mcp-webui
     restart: unless-stopped
