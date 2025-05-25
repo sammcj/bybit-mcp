@@ -7,6 +7,8 @@
 
 import express from "express";
 import cors from "cors";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -41,6 +43,14 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: "10mb" }));
+
+// Serve WebUI static files
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const webuiPath = path.join(__dirname, "..", "webui", "dist");
+
+// Serve static files from WebUI dist directory
+app.use(express.static(webuiPath));
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -337,23 +347,36 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: "Not found",
-    message: `Endpoint ${req.method} ${req.path} not found`,
-    availableEndpoints: [
-      "GET /health - Health check",
-      "GET /tools - List available tools",
-      "POST /call-tool - Execute a tool",
-      "POST /mcp - Modern Streamable HTTP transport",
-      "GET /mcp - Server-to-client notifications",
-      "DELETE /mcp - Session termination",
-      "GET /sse - Legacy SSE transport",
-      "POST /messages - Legacy SSE messages"
-    ]
-  });
+// SPA fallback - serve index.html for any non-API routes
+app.get('*', (req, res) => {
+  // Only serve index.html for non-API routes
+  if (!req.path.startsWith('/health') &&
+      !req.path.startsWith('/tools') &&
+      !req.path.startsWith('/call-tool') &&
+      !req.path.startsWith('/mcp') &&
+      !req.path.startsWith('/sse') &&
+      !req.path.startsWith('/messages')) {
+    res.sendFile(path.join(webuiPath, 'index.html'));
+  } else {
+    // Let the 404 handler take care of API routes
+    res.status(404).json({
+      error: "Not found",
+      message: `Endpoint ${req.method} ${req.path} not found`,
+      availableEndpoints: [
+        "GET /health - Health check",
+        "GET /tools - List available tools",
+        "POST /call-tool - Execute a tool",
+        "POST /mcp - Modern Streamable HTTP transport",
+        "GET /mcp - Server-to-client notifications",
+        "DELETE /mcp - Session termination",
+        "GET /sse - Legacy SSE transport",
+        "POST /messages - Legacy SSE messages"
+      ]
+    });
+  }
 });
+
+
 
 async function startHttpServer() {
   try {
