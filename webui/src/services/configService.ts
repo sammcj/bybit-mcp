@@ -145,7 +145,17 @@ export class ConfigService {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return this.mergeSettings(DEFAULT_SETTINGS, parsed);
+        const merged = this.mergeSettings(DEFAULT_SETTINGS, parsed);
+
+        // Fix legacy localhost URLs when running in production
+        if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+          if (merged.mcp.endpoint === 'http://localhost:8080' || merged.mcp.endpoint.includes('localhost')) {
+            console.log('🔧 Detected legacy localhost MCP endpoint, resetting to auto-detect');
+            merged.mcp.endpoint = ''; // Reset to auto-detect current origin
+          }
+        }
+
+        return merged;
       }
     } catch (error) {
       console.warn('Failed to load settings from localStorage:', error);
