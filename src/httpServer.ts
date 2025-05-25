@@ -23,7 +23,7 @@ const { PROJECT_NAME, PROJECT_VERSION } = CONSTANTS;
 
 // Server configuration
 const PORT = process.env.MCP_HTTP_PORT ? parseInt(process.env.MCP_HTTP_PORT) : 8080;
-const HOST = process.env.MCP_HTTP_HOST || "localhost";
+const HOST = process.env.MCP_HTTP_HOST || "0.0.0.0";
 
 // Store transports for each session type
 const transports = {

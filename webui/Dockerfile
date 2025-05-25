@@ -85,6 +85,8 @@ RUN addgroup -g 1001 -S nodejs && \
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV MCP_PORT=8080
+ENV MCP_HTTP_PORT=8080
+ENV MCP_HTTP_HOST=0.0.0.0
 ENV HOST=0.0.0.0
 
 # Enable pnpm
