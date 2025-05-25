@@ -6,6 +6,14 @@
   <title>Bybit MCP WebUI</title>
   <meta name="description" content="Modern web interface for Bybit MCP server with AI chat capabilities" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Preload critical fonts to prevent layout shift -->
+  <link rel="preload" href="/src/assets/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/src/assets/fonts/inter-500.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/src/assets/fonts/jetbrains-mono-400.woff2" as="font" type="font/woff2" crossorigin />
+
+  <!-- Preload critical CSS -->
+  <link rel="preload" href="/src/styles/main.css" as="style" />
 </head>
 <body>
   <div id="app">
@@ -176,14 +184,14 @@
           <div class="settings-section">
             <h3>AI Configuration</h3>
             <label for="ai-endpoint">AI Endpoint:</label>
-            <input type="url" id="ai-endpoint" placeholder="http://localhost:11434" />
+            <input type="url" id="ai-endpoint" placeholder="https://ollama.example.com" />
             <label for="ai-model">Model:</label>
-            <input type="text" id="ai-model" placeholder="qwen3-30b-a3b-ud-128k-nothink:q4_k_xl" />
+            <input type="text" id="ai-model" placeholder="qwen3-30b-a3b-ud-nothink-128k:q4_k_xl" />
           </div>
           <div class="settings-section">
             <h3>MCP Server</h3>
             <label for="mcp-endpoint">MCP Endpoint:</label>
-            <input type="url" id="mcp-endpoint" placeholder="http://localhost:8080" />
+            <input type="url" id="mcp-endpoint" placeholder="(auto-detect current domain)" />
           </div>
           <div class="settings-section">
             <h3>Agent Settings</h3>

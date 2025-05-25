@@ -21,7 +21,7 @@ function getDefaultSettings(): ChatSettings {
   return {
     ai: {
       endpoint: ollamaHost,
-      model: 'qwen3-30b-a3b-ud-128k-nothink:q4_k_xl',
+      model: 'qwen3-30b-a3b-ud-nothink-128k:q4_k_xl',
       temperature: 0.7,
       maxTokens: 2048,
       systemPrompt: systemPromptService.generateLegacySystemPrompt(),

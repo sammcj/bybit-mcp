@@ -105,7 +105,7 @@ The server requires Bybit API credentials to be set as environment variables:
 Client environment variables (./client/.env):
 
 - `OLLAMA_HOST`: The host of the Ollama server (defaults to http://localhost:11434)
-- `DEFAULT_MODEL`: The default model to use for chat (defaults to qwen3-30b-a3b-ud-128k-nothink:q4_k_xl)
+- `DEFAULT_MODEL`: The default model to use for chat (defaults to qwen3-30b-a3b-ud-nothink-128k:q4_k_xl)
 
 ### MCP Settings Configuration
 

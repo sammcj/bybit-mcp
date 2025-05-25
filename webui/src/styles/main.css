@@ -1,9 +1,7 @@
 /* Main CSS file - imports all styles */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-/* TODO: download and serve from local */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-/* TODO: download and serve from local */
+/* Local fonts - no external CDN dependencies */
+@import '../assets/fonts/fonts.css';
 
 @import './variables.css';
 @import './base.css';
