@@ -337,7 +337,6 @@ export class ToolsManager {
   }
 
   private displayResult(resultContainer: HTMLElement, resultContent: HTMLElement, result: any, success: boolean): void {
-
     // Format the result for display
     let formattedResult: string;
     let resultClass: string;
@@ -345,10 +344,31 @@ export class ToolsManager {
     if (success) {
       resultClass = 'result-success';
       try {
-        // Try to format as pretty JSON
-        formattedResult = JSON.stringify(result, null, 2);
+        // Extract the actual data from MCP content structure
+        let actualData = result;
+
+        // Check if this is an MCP content response
+        if (result && result.content && Array.isArray(result.content) && result.content.length > 0) {
+          const firstContent = result.content[0];
+          if (firstContent.type === 'text' && firstContent.text) {
+            try {
+              // Try to parse the text as JSON
+              actualData = JSON.parse(firstContent.text);
+            } catch {
+              // If parsing fails, use the text as-is
+              actualData = firstContent.text;
+            }
+          }
+        }
+
+        // Format as pretty JSON
+        if (typeof actualData === 'object') {
+          formattedResult = JSON.stringify(actualData, null, 2);
+        } else {
+          formattedResult = String(actualData);
+        }
       } catch {
-        formattedResult = String(result);
+        formattedResult = JSON.stringify(result, null, 2);
       }
     } else {
       resultClass = 'result-error';
