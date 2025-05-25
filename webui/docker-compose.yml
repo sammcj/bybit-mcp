@@ -1,0 +1,56 @@
+# ==============================================================================
+# Docker Compose Configuration for Bybit MCP WebUI
+# ==============================================================================
+# This file provides easy deployment options for the Bybit MCP WebUI
+# ==============================================================================
+
+services:
+  # ==============================================================================
+  # Bybit MCP WebUI Service
+  # ==============================================================================
+  bybit-mcp-webui:
+    build:
+      context: ..
+      dockerfile: webui/Dockerfile
+      target: production
+    image: bybit-mcp-webui:latest
+    container_name: bybit-mcp-webui
+    restart: unless-stopped
+    stop_grace_period: 2s
+
+    # Port mapping
+    ports:
+      - "8080:8080"
+
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - MCP_PORT=8080
+      - HOST=0.0.0.0
+      # Add your Bybit API credentials here (optional)
+      # - BYBIT_API_KEY=your_api_key_here
+      # - BYBIT_API_SECRET=your_api_secret_here
+      # - BYBIT_TESTNET=true
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Security
+    security_opt:
+      - no-new-privileges:true
+    read_only: false
+    user: "1001:1001"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bybit-mcp.rule=Host(`localhost`)"
+      - "traefik.http.services.bybit-mcp.loadbalancer.server.port=8080"
+      - "com.docker.compose.project=bybit-mcp"
+      - "com.docker.compose.service=webui"
+
