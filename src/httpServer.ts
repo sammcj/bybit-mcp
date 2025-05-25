@@ -347,18 +347,16 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// SPA fallback - serve index.html for any non-API routes
-app.get('*', (req, res) => {
-  // Only serve index.html for non-API routes
-  if (!req.path.startsWith('/health') &&
-      !req.path.startsWith('/tools') &&
-      !req.path.startsWith('/call-tool') &&
-      !req.path.startsWith('/mcp') &&
-      !req.path.startsWith('/sse') &&
-      !req.path.startsWith('/messages')) {
-    res.sendFile(path.join(webuiPath, 'index.html'));
-  } else {
-    // Let the 404 handler take care of API routes
+// 404 handler for API routes
+app.use((req, res, next) => {
+  // Check if this is an API route
+  if (req.path.startsWith('/health') ||
+      req.path.startsWith('/tools') ||
+      req.path.startsWith('/call-tool') ||
+      req.path.startsWith('/mcp') ||
+      req.path.startsWith('/sse') ||
+      req.path.startsWith('/messages')) {
+    // This is an API route that wasn't handled, return 404
     res.status(404).json({
       error: "Not found",
       message: `Endpoint ${req.method} ${req.path} not found`,
@@ -373,6 +371,9 @@ app.get('*', (req, res) => {
         "POST /messages - Legacy SSE messages"
       ]
     });
+  } else {
+    // This is not an API route, serve the SPA
+    res.sendFile(path.join(webuiPath, 'index.html'));
   }
 });
 
