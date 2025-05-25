@@ -114,24 +114,56 @@ export class ToolsManager {
         <p class="tool-description">${tool.description}</p>
         <div class="tool-params">
           <h5>Parameters:</h5>
-          ${Object.entries(properties).map(([key, param]: [string, any]) => `
-            <div class="param-item">
-              <label for="${tool.name}-${key}">
-                ${key}${requiredParams.includes(key) ? ' *' : ''}
-              </label>
-              <input
-                type="text"
-                id="${tool.name}-${key}"
-                placeholder="${param.description || ''}"
-                ${param.enum ? `list="${tool.name}-${key}-list"` : ''}
-              />
-              ${param.enum ? `
-                <datalist id="${tool.name}-${key}-list">
-                  ${param.enum.map((value: string) => `<option value="${value}">`).join('')}
-                </datalist>
-              ` : ''}
-            </div>
-          `).join('')}
+          ${Object.entries(properties).map(([key, param]: [string, any]) => {
+            // Determine default value
+            let defaultValue = '';
+            if (key === 'symbol') {
+              defaultValue = 'XRPUSDT';
+            } else if (key === 'category') {
+              defaultValue = 'spot';
+            } else if (key === 'interval') {
+              defaultValue = '15';
+            } else if (key === 'limit') {
+              defaultValue = '100';
+            }
+
+            // Check if this field has enum options
+            if (param.enum && Array.isArray(param.enum)) {
+              // Use dropdown for enum fields
+              return `
+                <div class="param-item">
+                  <label for="${tool.name}-${key}">
+                    ${key}${requiredParams.includes(key) ? ' *' : ''}
+                  </label>
+                  <select id="${tool.name}-${key}" class="param-select">
+                    ${param.enum.map((value: string) => `
+                      <option value="${value}" ${value === defaultValue ? 'selected' : ''}>
+                        ${value}
+                      </option>
+                    `).join('')}
+                  </select>
+                  ${param.description ? `<small class="param-description">${param.description}</small>` : ''}
+                </div>
+              `;
+            } else {
+              // Use input for non-enum fields
+              return `
+                <div class="param-item">
+                  <label for="${tool.name}-${key}">
+                    ${key}${requiredParams.includes(key) ? ' *' : ''}
+                  </label>
+                  <input
+                    type="text"
+                    id="${tool.name}-${key}"
+                    placeholder="${param.description || ''}"
+                    value="${defaultValue}"
+                    class="param-input"
+                  />
+                  ${param.description ? `<small class="param-description">${param.description}</small>` : ''}
+                </div>
+              `;
+            }
+          }).join('')}
         </div>
         <div class="tool-result" id="result-${tool.name}" style="display: none;">
           <div class="result-header">
@@ -229,9 +261,9 @@ export class ToolsManager {
     const properties = tool.inputSchema?.properties || {};
 
     for (const [key] of Object.entries(properties)) {
-      const input = document.getElementById(`${toolName}-${key}`) as HTMLInputElement;
-      if (input && input.value) {
-        params[key] = input.value;
+      const element = document.getElementById(`${toolName}-${key}`) as HTMLInputElement | HTMLSelectElement;
+      if (element && element.value) {
+        params[key] = element.value;
       }
     }
 
