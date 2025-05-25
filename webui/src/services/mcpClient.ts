@@ -29,8 +29,8 @@ export class MCPClient {
       if (window.location.hostname === 'localhost' && window.location.port === '3000') {
         // Development mode with Vite dev server
         this.baseUrl = '/api/mcp'; // Use Vite proxy in development
-      } else if (baseUrl && baseUrl !== '') {
-        // Explicit base URL provided
+      } else if (baseUrl && baseUrl !== '' && baseUrl !== 'auto') {
+        // Explicit base URL provided (not empty or 'auto')
         this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
       } else {
         // Production mode or Docker - use current origin
@@ -316,7 +316,20 @@ export class MCPClient {
    * Update the base URL for the MCP server
    */
   setBaseUrl(url: string): void {
-    this.baseUrl = url.replace(/\/$/, '');
+    // Handle empty string or 'auto' to use current origin
+    if (!url || url === '' || url === 'auto') {
+      if (typeof window !== 'undefined') {
+        this.baseUrl = window.location.origin;
+        console.log('🔧 setBaseUrl: Using current origin:', this.baseUrl);
+      } else {
+        this.baseUrl = 'http://localhost:8080';
+        console.log('🔧 setBaseUrl: Using server-side fallback:', this.baseUrl);
+      }
+    } else {
+      this.baseUrl = url.replace(/\/$/, '');
+      console.log('🔧 setBaseUrl: Using explicit URL:', this.baseUrl);
+    }
+
     // If connected, disconnect and reconnect with new URL
     if (this.connected) {
       this.disconnect().then(() => {
@@ -352,17 +365,20 @@ const getDefaultMCPUrl = (): string => {
   console.log('🔧 MCP URL Detection:', {
     envEndpoint,
     isWindow: typeof window !== 'undefined',
-    windowMcpEndpoint: typeof window !== 'undefined' ? (window as any).__MCP_ENDPOINT__ : 'N/A'
+    windowMcpEndpoint: typeof window !== 'undefined' ? (window as any).__MCP_ENDPOINT__ : 'N/A',
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+    origin: typeof window !== 'undefined' ? window.location.origin : 'N/A'
   });
 
-  if (envEndpoint && envEndpoint !== '') {
+  // If we have an explicit endpoint from build-time injection, use it
+  if (envEndpoint && envEndpoint !== '' && envEndpoint !== 'auto') {
     console.log('🔧 Using explicit MCP endpoint:', envEndpoint);
     return envEndpoint;
   }
 
-  // In browser, use current origin by default (for Docker/Traefik)
+  // In browser, always use empty string to trigger current origin logic
   if (typeof window !== 'undefined') {
-    console.log('🔧 Using current origin for MCP endpoint');
+    console.log('🔧 Using current origin for MCP endpoint (empty string)');
     return ''; // Empty string means use current origin
   }
 
