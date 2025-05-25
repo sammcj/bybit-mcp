@@ -38,8 +38,9 @@ COPY package.json pnpm-lock.yaml* ./
 COPY webui/package.json webui/pnpm-lock.yaml* ./webui/
 
 # Install all dependencies (including dev dependencies for building)
+# Skip prepare scripts during dependency installation
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prefer-offline
+    pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 # Install WebUI dependencies
 WORKDIR /app/webui
@@ -50,8 +51,8 @@ RUN --mount=type=cache,id=pnpm-webui,target=/pnpm/store \
 WORKDIR /app
 COPY . .
 
-# Build MCP Server
-RUN pnpm build
+# Build MCP Server (run tsc manually to avoid prepare script issues)
+RUN npx tsc && node -e "require('fs').chmodSync('build/index.js', '755')"
 
 # Build WebUI
 WORKDIR /app/webui
@@ -60,7 +61,7 @@ RUN pnpm build
 # Install only production dependencies for final stage
 WORKDIR /app
 RUN --mount=type=cache,id=pnpm-prod,target=/pnpm/store \
-    pnpm install --frozen-lockfile --prod --prefer-offline
+    pnpm install --frozen-lockfile --prod --prefer-offline --ignore-scripts
 
 # ==============================================================================
 # Stage 2: Production Image
