@@ -28,13 +28,13 @@ export class ToolsManager {
 
     try {
       console.log('🔧 Initializing Tools Manager...');
-      
+
       // Load available tools
       await this.loadTools();
-      
+
       // Render tools interface
       this.renderToolsInterface();
-      
+
       this.isInitialized = true;
       console.log('✅ Tools Manager initialized');
     } catch (error) {
@@ -104,8 +104,8 @@ export class ToolsManager {
   private renderToolCard(tool: MCPTool): string {
     const requiredParams = tool.inputSchema?.required || [];
     const properties = tool.inputSchema?.properties || {};
-    
-    return `
+
+    const html = `
       <div class="tool-card" data-tool="${tool.name}">
         <div class="tool-header">
           <h4>${tool.name}</h4>
@@ -119,9 +119,9 @@ export class ToolsManager {
               <label for="${tool.name}-${key}">
                 ${key}${requiredParams.includes(key) ? ' *' : ''}
               </label>
-              <input 
-                type="text" 
-                id="${tool.name}-${key}" 
+              <input
+                type="text"
+                id="${tool.name}-${key}"
                 placeholder="${param.description || ''}"
                 ${param.enum ? `list="${tool.name}-${key}-list"` : ''}
               />
@@ -133,8 +133,17 @@ export class ToolsManager {
             </div>
           `).join('')}
         </div>
+        <div class="tool-result" id="result-${tool.name}" style="display: none;">
+          <div class="result-header">
+            <h5>Result</h5>
+            <button class="result-close" data-tool="${tool.name}" title="Close result">&times;</button>
+          </div>
+          <div class="result-content" id="result-content-${tool.name}"></div>
+        </div>
       </div>
     `;
+
+    return html;
   }
 
   /**
@@ -195,27 +204,38 @@ export class ToolsManager {
         }
       });
     });
+
+    // Result close buttons
+    document.querySelectorAll('.result-close').forEach(btn => {
+      btn.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        const toolName = target.dataset.tool;
+        if (toolName) {
+          this.hideToolResult(toolName);
+        }
+      });
+    });
   }
 
   /**
    * Test a specific tool
    */
   private async testTool(toolName: string): Promise<void> {
-    try {
-      const tool = this.tools.find(t => t.name === toolName);
-      if (!tool) return;
+    const tool = this.tools.find(t => t.name === toolName);
+    if (!tool) return;
 
-      // Collect parameters from form
-      const params: any = {};
-      const properties = tool.inputSchema?.properties || {};
-      
-      for (const [key] of Object.entries(properties)) {
-        const input = document.getElementById(`${toolName}-${key}`) as HTMLInputElement;
-        if (input && input.value) {
-          params[key] = input.value;
-        }
+    // Collect parameters from form
+    const params: any = {};
+    const properties = tool.inputSchema?.properties || {};
+
+    for (const [key] of Object.entries(properties)) {
+      const input = document.getElementById(`${toolName}-${key}`) as HTMLInputElement;
+      if (input && input.value) {
+        params[key] = input.value;
       }
+    }
 
+    try {
       console.log(`🔧 Testing tool ${toolName} with params:`, params);
 
       // Show loading state
@@ -227,6 +247,9 @@ export class ToolsManager {
       // Record execution
       this.recordExecution(toolName, params, result, true);
 
+      // Show result in tool card
+      this.showToolResult(toolName, result, true);
+
       // Update UI
       this.hideToolLoading(toolName);
       this.updateHistoryDisplay();
@@ -235,10 +258,13 @@ export class ToolsManager {
 
     } catch (error) {
       console.error(`❌ Tool ${toolName} execution failed:`, error);
-      
+
       // Record failed execution
-      this.recordExecution(toolName, {}, error, false);
-      
+      this.recordExecution(toolName, params, error, false);
+
+      // Show error in tool card
+      this.showToolResult(toolName, error, false);
+
       this.hideToolLoading(toolName);
       this.updateHistoryDisplay();
     }
@@ -277,7 +303,7 @@ export class ToolsManager {
    * Show tool loading state
    */
   private showToolLoading(toolName: string): void {
-    const btn = document.querySelector(`[data-tool="${toolName}"]`) as HTMLElement;
+    const btn = document.querySelector(`.test-tool-btn[data-tool="${toolName}"]`) as HTMLElement;
     if (btn) {
       btn.textContent = 'Testing...';
       btn.setAttribute('disabled', 'true');
@@ -288,10 +314,97 @@ export class ToolsManager {
    * Hide tool loading state
    */
   private hideToolLoading(toolName: string): void {
-    const btn = document.querySelector(`[data-tool="${toolName}"]`) as HTMLElement;
+    const btn = document.querySelector(`.test-tool-btn[data-tool="${toolName}"]`) as HTMLElement;
     if (btn) {
       btn.textContent = 'Test';
       btn.removeAttribute('disabled');
+    }
+  }
+
+  /**
+   * Show tool result in the tool card
+   */
+  private showToolResult(toolName: string, result: any, success: boolean): void {
+    const resultContainer = document.getElementById(`result-${toolName}`);
+    const resultContent = document.getElementById(`result-content-${toolName}`);
+
+    if (!resultContainer || !resultContent) {
+      console.error(`❌ Could not find result DOM elements for ${toolName}`);
+      return;
+    }
+
+    this.displayResult(resultContainer, resultContent, result, success);
+  }
+
+  private displayResult(resultContainer: HTMLElement, resultContent: HTMLElement, result: any, success: boolean): void {
+
+    // Format the result for display
+    let formattedResult: string;
+    let resultClass: string;
+
+    if (success) {
+      resultClass = 'result-success';
+      try {
+        // Try to format as pretty JSON
+        formattedResult = JSON.stringify(result, null, 2);
+      } catch {
+        formattedResult = String(result);
+      }
+    } else {
+      resultClass = 'result-error';
+      if (result instanceof Error) {
+        formattedResult = `Error: ${result.message}`;
+      } else {
+        formattedResult = `Error: ${String(result)}`;
+      }
+    }
+
+    // Update content and show
+    resultContent.innerHTML = `
+      <div class="result-status ${resultClass}">
+        ${success ? '✅ Success' : '❌ Error'}
+      </div>
+      <pre class="result-data">${formattedResult}</pre>
+      <div class="result-actions">
+        <button class="copy-result-btn" data-result="${encodeURIComponent(formattedResult)}">
+          📋 Copy
+        </button>
+      </div>
+    `;
+
+    // Show the result container
+    resultContainer.style.display = 'block';
+
+    // Add copy functionality
+    const copyBtn = resultContent.querySelector('.copy-result-btn') as HTMLElement;
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const resultData = decodeURIComponent(copyBtn.dataset.result || '');
+        navigator.clipboard.writeText(resultData).then(() => {
+          copyBtn.textContent = '✅ Copied!';
+          setTimeout(() => {
+            copyBtn.textContent = '📋 Copy';
+          }, 2000);
+        }).catch(() => {
+          copyBtn.textContent = '❌ Failed';
+          setTimeout(() => {
+            copyBtn.textContent = '📋 Copy';
+          }, 2000);
+        });
+      });
+    }
+
+    // Scroll result into view
+    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /**
+   * Hide tool result
+   */
+  private hideToolResult(toolName: string): void {
+    const resultContainer = document.getElementById(`result-${toolName}`);
+    if (resultContainer) {
+      resultContainer.style.display = 'none';
     }
   }
 
