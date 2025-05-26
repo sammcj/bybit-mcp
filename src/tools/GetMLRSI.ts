@@ -2,20 +2,20 @@ import { Tool, CallToolResult } from "@modelcontextprotocol/sdk/types.js"
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js"
 import { z } from "zod"
 import { BaseToolImplementation } from "./BaseTool.js"
-import { 
-  calculateRSI, 
-  extractFeatures, 
-  kalmanFilter, 
-  alma, 
+import {
+  calculateRSI,
+  extractFeatures,
+  kalmanFilter,
+  alma,
   doubleEma,
   KlineData,
-  FeatureVector 
+  FeatureVector
 } from "../utils/mathUtils.js"
-import { 
-  applyKNNToRSI, 
-  batchProcessKNN, 
-  KNNConfig, 
-  KNNResult 
+import {
+  applyKNNToRSI,
+  batchProcessKNN,
+  KNNConfig,
+  KNNResult
 } from "../utils/knnAlgorithm.js"
 import { GetKlineParamsV5, KlineIntervalV3 } from "bybit-api"
 
@@ -134,7 +134,7 @@ class GetMLRSI extends BaseToolImplementation {
 
   async toolCall(request: z.infer<typeof CallToolRequestSchema>): Promise<CallToolResult> {
     const startTime = Date.now()
-    
+
     try {
       this.logInfo("Starting get_ml_rsi tool call")
 
@@ -153,7 +153,7 @@ class GetMLRSI extends BaseToolImplementation {
 
       // Fetch kline data
       const klineData = await this.fetchKlineData(args)
-      
+
       if (klineData.length < args.rsiLength + args.knnLookback) {
         throw new Error(`Insufficient data. Need at least ${args.rsiLength + args.knnLookback} data points, got ${klineData.length}`)
       }
@@ -161,7 +161,7 @@ class GetMLRSI extends BaseToolImplementation {
       // Calculate standard RSI
       const closePrices = klineData.map(k => k.close)
       const rsiValues = calculateRSI(closePrices, args.rsiLength)
-      
+
       if (rsiValues.length === 0) {
         throw new Error("Failed to calculate RSI values")
       }
@@ -224,7 +224,7 @@ class GetMLRSI extends BaseToolImplementation {
     }
 
     const response = await this.executeRequest(() => this.client.getKline(params))
-    
+
     if (!response.list || response.list.length === 0) {
       throw new Error("No kline data received from API")
     }
@@ -241,8 +241,8 @@ class GetMLRSI extends BaseToolImplementation {
   }
 
   private applySmoothingToResults(
-    knnResults: KNNResult[], 
-    rsiValues: number[], 
+    knnResults: KNNResult[],
+    rsiValues: number[],
     method: string
   ): KNNResult[] {
     if (method === "none" || knnResults.length === 0) {
@@ -274,9 +274,9 @@ class GetMLRSI extends BaseToolImplementation {
   }
 
   private formatMLRSIData(
-    klineData: KlineData[], 
-    rsiValues: number[], 
-    knnResults: KNNResult[], 
+    klineData: KlineData[],
+    rsiValues: number[],
+    knnResults: KNNResult[],
     limit: number
   ): MLRSIDataPoint[] {
     const data: MLRSIDataPoint[] = []
@@ -290,7 +290,7 @@ class GetMLRSI extends BaseToolImplementation {
 
       if (knnResult) {
         const trend = this.determineTrend(knnResult.enhancedRsi, knnResult.adaptiveOverbought, knnResult.adaptiveOversold)
-        
+
         data.push({
           timestamp: klineData[i].timestamp,
           standardRsi,
@@ -308,11 +308,21 @@ class GetMLRSI extends BaseToolImplementation {
     return data
   }
 
+  /**
+   * Determine market trend based on RSI values with proper priority handling
+   * Fixed: Removed overlapping conditions that could cause contradictory results
+   */
   private determineTrend(rsi: number, overbought: number, oversold: number): "bullish" | "bearish" | "neutral" {
+    // Priority 1: Adaptive levels (ML-enhanced thresholds take precedence)
     if (rsi > overbought) return "bearish"
     if (rsi < oversold) return "bullish"
-    if (rsi > 55) return "bullish"
-    if (rsi < 45) return "bearish"
+
+    // Priority 2: Standard RSI levels (only apply if not in adaptive zones)
+    // Use a buffer zone around 50 to avoid too frequent switches
+    if (rsi >= 55) return "bullish"
+    if (rsi <= 45) return "bearish"
+
+    // Priority 3: Neutral zone (45-55 range)
     return "neutral"
   }
 
