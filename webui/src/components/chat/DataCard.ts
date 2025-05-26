@@ -27,6 +27,13 @@ export class DataCard {
 
     this.render();
     this.setupEventListeners();
+
+    // If expanded by default, render chart after DOM is ready
+    if (this.isExpanded) {
+      setTimeout(() => {
+        this.renderChart();
+      }, 150);
+    }
   }
 
   /**
@@ -145,8 +152,10 @@ export class DataCard {
       // Animate content visibility
       if (this.isExpanded) {
         content.style.display = 'block';
-        // Trigger chart rendering if needed
-        this.renderChart();
+        // Trigger chart rendering with a small delay to ensure DOM is ready
+        setTimeout(() => {
+          this.renderChart();
+        }, 100);
       } else {
         // Add a small delay to allow animation
         setTimeout(() => {
@@ -225,13 +234,15 @@ export class DataCard {
       return;
     }
 
-    // Create canvas element
+    // Create canvas element with proper sizing
     const canvas = document.createElement('canvas');
-    canvas.width = 600;
+    const containerWidth = this.chartContainer.clientWidth || 600;
+    canvas.width = containerWidth;
     canvas.height = 300;
-    canvas.style.width = '100%';
+    canvas.style.width = `${containerWidth}px`;
     canvas.style.height = '300px';
     canvas.style.border = '1px solid #ddd';
+    canvas.style.display = 'block';
 
     this.chartContainer.innerHTML = '';
     this.chartContainer.appendChild(canvas);
