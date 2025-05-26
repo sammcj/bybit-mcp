@@ -362,7 +362,7 @@ export class ChatApp {
       );
 
       // Check if response is empty
-      if (this.isEmptyResponse(assistantMessage.content)) {
+      if (this.isEmptyResponse(assistantMessage.content || '')) {
         throw new Error('Received empty response from agent');
       }
 

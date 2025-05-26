@@ -2,6 +2,8 @@
 
 A modern, lightweight web interface for the Bybit MCP (Model Context Protocol) server with AI-powered chat capabilities.
 
+![screenshot](screenshot.png)
+
 ## Features
 
 - 🤖 **AI-Powered Chat**: Interactive chat interface with OpenAI-compatible API support (Ollama, etc.)
