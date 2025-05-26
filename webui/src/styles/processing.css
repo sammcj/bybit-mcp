@@ -1,0 +1,178 @@
+/* Processing Indicator Styles */
+
+/* Processing message container */
+.processing-message {
+  margin-bottom: var(--spacing-lg);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Processing indicator container */
+.processing-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+/* Animated dots */
+.processing-dots {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.processing-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  animation: processingPulse 1.4s ease-in-out infinite both;
+}
+
+.processing-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.processing-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.processing-dots span:nth-child(3) {
+  animation-delay: 0s;
+}
+
+/* Processing text */
+.processing-text {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: var(--font-size-sm);
+}
+
+/* Processing content styling */
+.message-content.processing {
+  background-color: var(--bg-tertiary);
+  border: 1px dashed var(--border-secondary);
+  opacity: 0.8;
+}
+
+/* Cursor animation for streaming messages */
+.cursor {
+  animation: blink 1s infinite;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+/* Keyframe animations */
+@keyframes processingPulse {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulse animation for general loading states */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Spin animation for loading spinners */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced processing states */
+.processing-message .message-avatar {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.processing-message .message-time {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Retry-specific styling */
+.processing-text:has-text("Retrying") {
+  color: var(--color-warning);
+}
+
+.processing-message[data-retry="true"] .processing-dots span {
+  background-color: var(--color-warning);
+}
+
+.processing-message[data-retry="true"] .message-avatar {
+  background-color: var(--color-warning);
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .processing-dots span {
+    background-color: var(--color-primary-light);
+  }
+
+  .message-content.processing {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .processing-dots span {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .processing-message .message-avatar {
+    animation: none;
+  }
+
+  .cursor {
+    animation: none;
+  }
+
+  .processing-indicator {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .processing-dots span {
+    background-color: currentColor;
+  }
+
+  .message-content.processing {
+    border-width: 2px;
+    border-style: solid;
+  }
+}

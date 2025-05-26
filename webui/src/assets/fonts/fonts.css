@@ -1,0 +1,7 @@
+/* Local font definitions - uses system fonts for better reliability */
+
+/*
+ * No external font files needed - using system font stack
+ * This provides excellent performance and no external dependencies
+ * while maintaining great visual consistency across platforms
+ */

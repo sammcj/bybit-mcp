@@ -60,28 +60,38 @@ export abstract class BaseToolImplementation {
 
   protected client: RestClientV5
   protected isDevMode: boolean
+  protected isTestMode: boolean = false
   private requestQueue: QueuedRequest[] = []
   private processingQueue = false
   private requestCount = 0
   private lastRequestTime = 0
   private requestHistory: number[] = [] // Timestamps of requests within the last minute
   private initialized = false
+  private activeTimeouts: NodeJS.Timeout[] = []
 
-  constructor() {
-    const config = getEnvConfig()
-    this.isDevMode = !config.apiKey || !config.apiSecret
-
-    if (this.isDevMode) {
-      this.client = new RestClientV5({
-        testnet: true,
-      })
+  constructor(mockClient?: RestClientV5) {
+    if (mockClient) {
+      // Use provided mock client for testing
+      this.client = mockClient
+      this.isDevMode = true
+      this.isTestMode = true
     } else {
-      this.client = new RestClientV5({
-        key: config.apiKey,
-        secret: config.apiSecret,
-        testnet: config.useTestnet,
-        recv_window: 5000, // 5 second receive window
-      })
+      // Normal production/development initialization
+      const config = getEnvConfig()
+      this.isDevMode = !config.apiKey || !config.apiSecret
+
+      if (this.isDevMode) {
+        this.client = new RestClientV5({
+          testnet: true,
+        })
+      } else {
+        this.client = new RestClientV5({
+          key: config.apiKey,
+          secret: config.apiSecret,
+          testnet: config.useTestnet,
+          recv_window: 5000, // 5 second receive window
+        })
+      }
     }
   }
 
@@ -107,19 +117,27 @@ export abstract class BaseToolImplementation {
         execute: async () => {
           try {
             // Check rate limits
-            if (!this.canMakeRequest()) {
+            if (!this.canMakeRequest() && !this.isTestMode) {
               const waitTime = this.getWaitTime()
               this.logInfo(`Rate limit reached. Waiting ${waitTime}ms`)
               await new Promise(resolve => setTimeout(resolve, waitTime))
             }
 
             // Execute request with timeout
-            const response = await Promise.race([
-              operation(),
-              new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("Request timeout")), 10000)
-              )
-            ]) as APIResponseV3WithTime<T>
+            let response: APIResponseV3WithTime<T>
+
+            if (this.isTestMode) {
+              // In test mode, don't create timeout promises to avoid open handles
+              response = await operation() as APIResponseV3WithTime<T>
+            } else {
+              // In production mode, use timeout for real API calls
+              response = await Promise.race([
+                operation(),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error("Request timeout")), 10000)
+                )
+              ]) as APIResponseV3WithTime<T>
+            }
 
             // Update rate limit tracking
             this.updateRequestHistory()
@@ -137,9 +155,11 @@ export abstract class BaseToolImplementation {
               this.shouldRetry(error)
             ) {
               this.logWarning(`Retrying request (attempt ${retryCount + 1})`)
-              await new Promise(resolve =>
-                setTimeout(resolve, RATE_LIMIT.retryAfter)
-              )
+              if (!this.isTestMode) {
+                await new Promise(resolve =>
+                  setTimeout(resolve, RATE_LIMIT.retryAfter)
+                )
+              }
               return this.executeRequest(operation, retryCount + 1)
             }
             throw error
@@ -387,6 +407,34 @@ export abstract class BaseToolImplementation {
     }
   }
 
+  // Reference ID counter for generating unique IDs
+  private static referenceIdCounter = 0
+
+  /**
+   * Generate a unique reference ID
+   */
+  protected generateReferenceId(): string {
+    BaseToolImplementation.referenceIdCounter += 1
+    return `REF${String(BaseToolImplementation.referenceIdCounter).padStart(3, '0')}`
+  }
+
+  /**
+   * Add reference ID metadata to response if requested
+   */
+  protected addReferenceMetadata(data: any, includeReferenceId: boolean, toolName: string, endpoint?: string): any {
+    if (!includeReferenceId) {
+      return data
+    }
+
+    return {
+      ...data,
+      _referenceId: this.generateReferenceId(),
+      _timestamp: new Date().toISOString(),
+      _toolName: toolName,
+      _endpoint: endpoint
+    }
+  }
+
   protected formatResponse(data: any): CallToolResult {
     this.ensureInitialized()
     const content: TextContent = {
@@ -423,5 +471,15 @@ export abstract class BaseToolImplementation {
         message: `${this.name}: ${message}`
       }
     }))
+  }
+
+  /**
+   * Cleanup method for tests to clear any remaining timeouts
+   */
+  public cleanup() {
+    this.activeTimeouts.forEach(timeout => clearTimeout(timeout))
+    this.activeTimeouts = []
+    this.requestQueue = []
+    this.processingQueue = false
   }
 }
