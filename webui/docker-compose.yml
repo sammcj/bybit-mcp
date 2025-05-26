@@ -13,11 +13,6 @@ services:
       context: ..
       dockerfile: webui/Dockerfile
       target: production
-      args:
-        # Set your AI service URL (Ollama, OpenAI-compatible API, etc.)
-        - OLLAMA_HOST=${OLLAMA_HOST:-https://ollama.example.com}
-        # Leave empty to auto-detect current domain (recommended for reverse proxy setups)
-        - MCP_ENDPOINT=${MCP_ENDPOINT:-}
     image: bybit-mcp-webui:latest
     container_name: bybit-mcp-webui
     restart: unless-stopped
@@ -36,18 +31,10 @@ services:
       # Runtime configuration (these override build-time args)
       - OLLAMA_HOST=${OLLAMA_HOST:-https://ollama.example.com}
       - MCP_ENDPOINT=${MCP_ENDPOINT:-}
-      # Add your Bybit API credentials here (optional)
+      # Add your Bybit API credentials here (optional, make sure they're read only!)
       # - BYBIT_API_KEY=your_api_key_here
       # - BYBIT_API_SECRET=your_api_secret_here
       # - BYBIT_TESTNET=true
-
-    # Health check
-    healthcheck:
-      test: ["CMD", "/app/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
     # Security
     security_opt:
