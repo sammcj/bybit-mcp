@@ -234,15 +234,18 @@ export class DataCard {
       return;
     }
 
-    // Create canvas element with proper sizing
+    // Create canvas element with responsive sizing
     const canvas = document.createElement('canvas');
-    const containerWidth = this.chartContainer.clientWidth || 600;
+    const maxWidth = Math.min(this.chartContainer.clientWidth || 600, 800); // Cap at 800px
+    const containerWidth = Math.max(maxWidth - 40, 400); // Ensure minimum 400px with padding
     canvas.width = containerWidth;
     canvas.height = 300;
-    canvas.style.width = `${containerWidth}px`;
+    canvas.style.width = '100%';
+    canvas.style.maxWidth = `${containerWidth}px`;
     canvas.style.height = '300px';
     canvas.style.border = '1px solid #ddd';
     canvas.style.display = 'block';
+    canvas.style.margin = '0 auto';
 
     this.chartContainer.innerHTML = '';
     this.chartContainer.appendChild(canvas);
