@@ -151,7 +151,7 @@ export class MessageRenderer {
         summary: detection.summary,
         data: toolResult, // Use passed toolResult
         dataType: detection.dataType,
-        expanded: false, // Start collapsed for clean chat flow
+        expanded: true, // Start expanded to show charts immediately
         showChart: true
       };
       console.log('[MessageRenderer] DataCard config:', JSON.parse(JSON.stringify(cardConfig)));
