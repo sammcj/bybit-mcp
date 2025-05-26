@@ -7,6 +7,7 @@
 
 import { DataCard, type DataCardConfig } from './DataCard';
 import { detectDataType, type DetectionResult } from '../../utils/dataDetection';
+import { citationProcessor } from '../../services/citationProcessor';
 
 export interface MessageData {
   content: string;
@@ -230,12 +231,14 @@ export class MessageRenderer {
   }
 
   /**
-   * Process message content for basic formatting
+   * Process message content for basic formatting and citations
    */
   private processMessageContent(content: string): string {
-    // Basic markdown-like processing
-    let processed = content;
+    // Process citations first to convert [REF001] patterns to interactive elements
+    const processedMessage = citationProcessor.processMessage(content);
+    let processed = processedMessage.processedContent;
 
+    // Basic markdown-like processing
     // Bold text
     processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
