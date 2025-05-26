@@ -9,6 +9,7 @@
 @import './citations.css';
 @import './verification-panel.css';
 @import './agent-dashboard.css';
+@import './data-cards.css';
 
 /* Responsive design */
 @media (max-width: 768px) {

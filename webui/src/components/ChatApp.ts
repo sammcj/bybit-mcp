@@ -9,8 +9,10 @@ import { agentConfigService } from '@/services/agentConfig';
 import { mcpClient } from '@/services/mcpClient';
 import { configService } from '@/services/configService';
 import { citationProcessor } from '@/services/citationProcessor';
+import { citationStore } from '@/services/citationStore';
 import type { WorkflowEvent } from '@/types/workflow';
 import { marked } from 'marked';
+import { MessageRenderer, type MessageData } from './chat/MessageRenderer';
 
 export class ChatApp {
   private state: ChatState = {
@@ -27,9 +29,10 @@ export class ChatApp {
   private typingIndicator: HTMLElement;
   private fullConversationHistory: ChatMessage[] = []; // Track complete conversation including tool calls
   private workflowEventsContainer: HTMLElement | null = null;
-  private useAgent: boolean = true; // Toggle between agent and legacy client
+  private useAgent: boolean = false; // Toggle between agent and legacy client - temporarily disabled for testing
   private lastCitationAttachTime: number = 0;
   private citationAttachThrottle: number = 300; // Throttle to 300ms
+  private messageRenderer: MessageRenderer;
 
   constructor() {
     // Configure marked for safe HTML rendering
@@ -44,6 +47,9 @@ export class ChatApp {
     this.connectionStatus = document.getElementById('connection-status')!;
     this.typingIndicator = document.getElementById('typing-indicator')!;
     this.workflowEventsContainer = document.getElementById('workflow-events');
+
+    // Initialize the enhanced message renderer
+    this.messageRenderer = new MessageRenderer(this.chatMessages);
 
     this.initialize();
   }
@@ -388,6 +394,8 @@ export class ChatApp {
 
 
   private renderMessage(message: ChatUIMessage): void {
+    console.log('[ChatApp] renderMessage called with message:', JSON.parse(JSON.stringify(message))); // DEV_PLAN debug
+
     // Remove welcome message if this is the first real message
     if (this.state.messages.length === 1) {
       const welcomeMessage = this.chatMessages.querySelector('.welcome-message');
@@ -396,6 +404,74 @@ export class ChatApp {
       }
     }
 
+    // Check if this message has tool calls or citations and should use enhanced rendering
+    const hasToolCalls = message.tool_calls && message.tool_calls.length > 0;
+    const hasCitations = message.content && /\[REF\d+\]/.test(message.content);
+    const shouldUseEnhancedRenderer = (hasToolCalls || hasCitations) && !message.isStreaming;
+
+    console.log('[ChatApp] Rendering decision:', {
+      hasToolCalls,
+      hasCitations,
+      isStreaming: message.isStreaming,
+      shouldUseEnhancedRenderer
+    }); // DEV_PLAN debug
+
+    if (shouldUseEnhancedRenderer) {
+      console.log('[ChatApp] Using enhanced renderer'); // DEV_PLAN debug
+      // Use enhanced MessageRenderer for messages with tool results
+      this.renderEnhancedMessage(message);
+    } else {
+      console.log('[ChatApp] Using simple renderer'); // DEV_PLAN debug
+      // Use existing rendering for streaming messages and simple text
+      this.renderSimpleMessage(message);
+    }
+  }
+
+  /**
+   * Render message using the enhanced MessageRenderer (for tool results)
+   */
+  private renderEnhancedMessage(message: ChatUIMessage): void {
+    console.log('[ChatApp] renderEnhancedMessage called'); // DEV_PLAN debug
+    // Extract tool result from citation data if available
+    const toolResult = this.extractToolResultFromCitations(message);
+    console.log('[ChatApp] Extracted tool result:', toolResult); // DEV_PLAN debug
+
+    // Convert ChatUIMessage to MessageData format
+    const messageData: MessageData = {
+      content: message.content || '',
+      role: message.role,
+      timestamp: message.timestamp,
+      toolCall: toolResult ? {
+        name: toolResult.toolName,
+        result: toolResult.data
+      } : undefined
+    };
+    console.log('[ChatApp] Prepared MessageData for MessageRenderer:', JSON.parse(JSON.stringify(messageData))); // DEV_PLAN debug
+
+    // Create a container for this message
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'enhanced-message-container';
+    messageContainer.dataset.messageId = message.id;
+
+    // Use MessageRenderer to render the enhanced message
+    console.log('[ChatApp] Calling messageRenderer.renderMessage...'); // DEV_PLAN debug
+    const renderedMessage = this.messageRenderer.renderMessage(messageData);
+    messageContainer.appendChild(renderedMessage);
+
+    this.chatMessages.appendChild(messageContainer);
+
+    // Add citation event listeners if this is an assistant message
+    if (message.role === 'assistant') {
+      setTimeout(() => {
+        this.addCitationEventListeners(messageContainer);
+      }, 0);
+    }
+  }
+
+  /**
+   * Render message using the existing simple approach (for streaming and simple messages)
+   */
+  private renderSimpleMessage(message: ChatUIMessage): void {
     const messageElement = document.createElement('div');
     messageElement.className = 'chat-message';
     messageElement.dataset.messageId = message.id;
@@ -422,14 +498,57 @@ export class ChatApp {
 
     // Add citation event listeners if this is an assistant message
     if (message.role === 'assistant') {
-      console.log(`🎯 Assistant message detected, will add citation listeners`);
-      // Use setTimeout to ensure DOM is fully updated
       setTimeout(() => {
-        console.log(`🎯 About to add citation listeners to message element`);
         this.addCitationEventListeners(messageElement);
       }, 0);
     }
   }
+
+  /**
+   * Extract tool result from citation data
+   */
+  private extractToolResultFromCitations(message: ChatUIMessage): { toolName: string; data: any } | null {
+    console.log('[ChatApp] extractToolResultFromCitations called with message content:', message.content); // DEV_PLAN 1.22 debug
+    const content = message.content || '';
+
+    // Look for citation references in the message content
+    const citationMatches = content.match(/\[REF\d+\]/g);
+    console.log('[ChatApp] Found citation matches:', citationMatches); // DEV_PLAN 1.22 debug
+    if (!citationMatches) {
+      return null;
+    }
+
+    // Get the first citation reference
+    const firstCitation = citationMatches[0];
+    console.log('[ChatApp] Processing first citation:', firstCitation); // DEV_PLAN 1.22 debug
+
+    // Remove brackets from citation reference for store lookup
+    const referenceId = firstCitation.replace(/[\[\]]/g, ''); // Remove [ and ]
+    console.log('[ChatApp] Looking up citation with ID:', referenceId); // DEV_PLAN 1.22 debug
+
+    // Access the citation store to get the stored data
+    try {
+      const citationData = citationStore.getCitation(referenceId);
+      console.log('[ChatApp] Retrieved citation data from store (type:', typeof citationData, '):', citationData); // DEV_PLAN 1.22 debug
+      if (citationData && citationData.rawData) {
+        const result = {
+          toolName: citationData.toolName || 'unknown',
+          data: citationData.rawData
+        };
+        console.log('[ChatApp] Returning tool result:', JSON.parse(JSON.stringify(result))); // DEV_PLAN 1.22 debug
+        return result;
+      } else {
+        console.log('[ChatApp] No rawData found in citation data. Available keys:', citationData ? Object.keys(citationData) : 'null'); // DEV_PLAN 1.22 debug
+      }
+    } catch (error) {
+      console.warn('[ChatApp] Failed to extract citation data:', error); // DEV_PLAN 1.22 debug
+      console.warn('[ChatApp] Citation data that caused error:', citationStore.getCitation(firstCitation)); // DEV_PLAN 1.22 debug
+    }
+
+    return null;
+  }
+
+
 
 
 

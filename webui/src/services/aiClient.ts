@@ -140,10 +140,35 @@ export class AIClient implements AIService {
         const result = await mcpClient.callTool(func.name, args);
         console.log(`✅ Tool ${func.name} result:`, result);
 
+        // Extract reference ID from the result to include in AI context
+        let referenceId: string | null = null;
+        let actualData: any = result;
+
+        // Check if response has content array (MCP format)
+        if ((result as any).content && Array.isArray((result as any).content) && (result as any).content.length > 0) {
+          const contentItem = (result as any).content[0];
+          if (contentItem.type === 'text' && contentItem.text) {
+            try {
+              actualData = JSON.parse(contentItem.text);
+              referenceId = actualData._referenceId;
+            } catch (e) {
+              // If parsing fails, just use the original result
+            }
+          }
+        } else if ((result as any)._referenceId) {
+          referenceId = (result as any)._referenceId;
+        }
+
+        // Prepare content for AI with reference ID hint
+        let toolContent = JSON.stringify(result, null, 2);
+        if (referenceId) {
+          toolContent += `\n\n📋 Reference ID: ${referenceId}\n🔗 When responding to the user, please include this reference ID in square brackets like [${referenceId}] to enable data verification and interactive features.`;
+        }
+
         results.push({
           tool_call_id: toolCall.id,
           role: 'tool',
-          content: JSON.stringify(result, null, 2),
+          content: toolContent,
         });
       } catch (error) {
         console.error(`❌ Tool execution failed for ${toolCall.function?.name}:`, error);

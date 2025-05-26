@@ -5,6 +5,8 @@
 
 import { mcpClient } from '@/services/mcpClient';
 import type { MCPTool } from '@/types/mcp';
+import { DataCard, type DataCardConfig } from './chat/DataCard';
+import { detectDataType } from '../utils/dataDetection';
 
 export class ToolsManager {
   private tools: MCPTool[] = [];
@@ -17,6 +19,7 @@ export class ToolsManager {
     timestamp: number;
     success: boolean;
   }> = [];
+  private dataCards: Map<string, DataCard> = new Map(); // Track DataCards by tool name
 
   constructor() {}
 
@@ -369,52 +372,191 @@ export class ToolsManager {
   }
 
   private displayResult(resultContainer: HTMLElement, resultContent: HTMLElement, result: any, success: boolean): void {
-    // Format the result for display
-    let formattedResult: string;
-    let resultClass: string;
+    if (!success) {
+      // Handle error case with existing logic
+      this.displayErrorResult(resultContent, result);
+      resultContainer.style.display = 'block';
+      return;
+    }
 
-    if (success) {
-      resultClass = 'result-success';
-      try {
-        // Extract the actual data from MCP content structure
-        let actualData = result;
+    // Extract actual data from MCP content structure
+    let actualData = this.extractActualData(result);
 
-        // Check if this is an MCP content response
-        if (result && result.content && Array.isArray(result.content) && result.content.length > 0) {
-          const firstContent = result.content[0];
-          if (firstContent.type === 'text' && firstContent.text) {
-            try {
-              // Try to parse the text as JSON
-              actualData = JSON.parse(firstContent.text);
-            } catch {
-              // If parsing fails, use the text as-is
-              actualData = firstContent.text;
-            }
-          }
+    // Try to create a DataCard for visualisable data
+    const dataCardCreated = this.tryCreateDataCard(resultContainer, resultContent, actualData);
+
+    if (!dataCardCreated) {
+      // Fall back to traditional JSON display
+      this.displayTraditionalResult(resultContent, actualData);
+    }
+
+    // Show the result container
+    resultContainer.style.display = 'block';
+
+    // Scroll result into view
+    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /**
+   * Extract actual data from MCP content structure
+   */
+  private extractActualData(result: any): any {
+    let actualData = result;
+
+    // Check if this is an MCP content response
+    if (result && result.content && Array.isArray(result.content) && result.content.length > 0) {
+      const firstContent = result.content[0];
+      if (firstContent.type === 'text' && firstContent.text) {
+        try {
+          // Try to parse the text as JSON
+          actualData = JSON.parse(firstContent.text);
+        } catch {
+          // If parsing fails, use the text as-is
+          actualData = firstContent.text;
         }
-
-        // Format as pretty JSON
-        if (typeof actualData === 'object') {
-          formattedResult = JSON.stringify(actualData, null, 2);
-        } else {
-          formattedResult = String(actualData);
-        }
-      } catch {
-        formattedResult = JSON.stringify(result, null, 2);
-      }
-    } else {
-      resultClass = 'result-error';
-      if (result instanceof Error) {
-        formattedResult = `Error: ${result.message}`;
-      } else {
-        formattedResult = `Error: ${String(result)}`;
       }
     }
 
-    // Update content and show
+    return actualData;
+  }
+
+  /**
+   * Try to create a DataCard for visualisable data
+   */
+  private tryCreateDataCard(resultContainer: HTMLElement, resultContent: HTMLElement, actualData: any): boolean {
+    try {
+      // Detect if the data is visualisable
+      const detection = detectDataType(actualData);
+
+      if (!detection.visualisable || detection.confidence < 0.6) {
+        return false;
+      }
+
+      // Get tool name from container
+      const toolName = this.getToolNameFromContainer(resultContainer);
+      if (!toolName) {
+        return false;
+      }
+
+      // Clean up any existing DataCard for this tool
+      const existingCard = this.dataCards.get(toolName);
+      if (existingCard) {
+        existingCard.destroy();
+        this.dataCards.delete(toolName);
+      }
+
+      // Create DataCard configuration
+      const cardConfig: DataCardConfig = {
+        title: this.generateToolCardTitle(toolName, detection),
+        summary: detection.summary,
+        data: actualData,
+        dataType: detection.dataType,
+        expanded: true, // Start expanded in tools tab for immediate visibility
+        showChart: true
+      };
+
+      // Create container for DataCard
+      const cardContainer = document.createElement('div');
+      cardContainer.className = 'tool-result-datacard';
+
+      // Create and store the DataCard
+      const dataCard = new DataCard(cardContainer, cardConfig);
+      this.dataCards.set(toolName, dataCard);
+
+      // Add status and actions above the card
+      resultContent.innerHTML = `
+        <div class="result-status result-success">
+          ✅ Success - Data Visualisation Available
+        </div>
+        <div class="result-actions">
+          <button class="copy-result-btn" data-result="${encodeURIComponent(JSON.stringify(actualData, null, 2))}">
+            📋 Copy Raw Data
+          </button>
+          <button class="toggle-raw-btn">
+            📊 Show Raw JSON
+          </button>
+        </div>
+      `;
+
+      // Append the DataCard
+      resultContent.appendChild(cardContainer);
+
+      // Add toggle functionality for raw data
+      this.setupDataCardActions(resultContent, actualData);
+
+      return true;
+    } catch (error) {
+      console.warn('Failed to create DataCard for tool result:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Set up actions for DataCard (copy, toggle raw data)
+   */
+  private setupDataCardActions(resultContent: HTMLElement, actualData: any): void {
+    const copyBtn = resultContent.querySelector('.copy-result-btn') as HTMLElement;
+    const toggleBtn = resultContent.querySelector('.toggle-raw-btn') as HTMLElement;
+
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const resultData = decodeURIComponent(copyBtn.dataset.result || '');
+        navigator.clipboard.writeText(resultData).then(() => {
+          copyBtn.textContent = '✅ Copied!';
+          setTimeout(() => {
+            copyBtn.textContent = '📋 Copy Raw Data';
+          }, 2000);
+        }).catch(() => {
+          copyBtn.textContent = '❌ Failed';
+          setTimeout(() => {
+            copyBtn.textContent = '📋 Copy Raw Data';
+          }, 2000);
+        });
+      });
+    }
+
+    if (toggleBtn) {
+      let showingRaw = false;
+      toggleBtn.addEventListener('click', () => {
+        const cardContainer = resultContent.querySelector('.tool-result-datacard') as HTMLElement;
+        if (!cardContainer) return;
+
+        if (showingRaw) {
+          // Show DataCard
+          cardContainer.style.display = 'block';
+          const rawDataDiv = resultContent.querySelector('.raw-data-display');
+          if (rawDataDiv) rawDataDiv.remove();
+          toggleBtn.textContent = '📊 Show Raw JSON';
+          showingRaw = false;
+        } else {
+          // Show raw JSON
+          cardContainer.style.display = 'none';
+          const rawDataDiv = document.createElement('div');
+          rawDataDiv.className = 'raw-data-display';
+          rawDataDiv.innerHTML = `<pre class="result-data">${JSON.stringify(actualData, null, 2)}</pre>`;
+          resultContent.appendChild(rawDataDiv);
+          toggleBtn.textContent = '🎴 Show DataCard';
+          showingRaw = true;
+        }
+      });
+    }
+  }
+
+  /**
+   * Display traditional JSON result (fallback)
+   */
+  private displayTraditionalResult(resultContent: HTMLElement, actualData: any): void {
+    let formattedResult: string;
+
+    if (typeof actualData === 'object') {
+      formattedResult = JSON.stringify(actualData, null, 2);
+    } else {
+      formattedResult = String(actualData);
+    }
+
     resultContent.innerHTML = `
-      <div class="result-status ${resultClass}">
-        ${success ? '✅ Success' : '❌ Error'}
+      <div class="result-status result-success">
+        ✅ Success
       </div>
       <pre class="result-data">${formattedResult}</pre>
       <div class="result-actions">
@@ -423,9 +565,6 @@ export class ToolsManager {
         </button>
       </div>
     `;
-
-    // Show the result container
-    resultContainer.style.display = 'block';
 
     // Add copy functionality
     const copyBtn = resultContent.querySelector('.copy-result-btn') as HTMLElement;
@@ -445,9 +584,52 @@ export class ToolsManager {
         });
       });
     }
+  }
 
-    // Scroll result into view
-    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  /**
+   * Display error result
+   */
+  private displayErrorResult(resultContent: HTMLElement, result: any): void {
+    let formattedResult: string;
+
+    if (result instanceof Error) {
+      formattedResult = `Error: ${result.message}`;
+    } else {
+      formattedResult = `Error: ${String(result)}`;
+    }
+
+    resultContent.innerHTML = `
+      <div class="result-status result-error">
+        ❌ Error
+      </div>
+      <pre class="result-data">${formattedResult}</pre>
+    `;
+  }
+
+  /**
+   * Get tool name from result container
+   */
+  private getToolNameFromContainer(resultContainer: HTMLElement): string | null {
+    const id = resultContainer.id;
+    if (id && id.startsWith('result-')) {
+      return id.substring(7); // Remove 'result-' prefix
+    }
+    return null;
+  }
+
+  /**
+   * Generate appropriate title for tool DataCard
+   */
+  private generateToolCardTitle(toolName: string, _detection: any): string {
+    const toolDisplayNames: Record<string, string> = {
+      'get_ticker': 'Ticker Data',
+      'get_kline_data': 'Kline Data',
+      'get_ml_rsi': 'ML-RSI Analysis',
+      'get_order_blocks': 'Order Blocks',
+      'get_market_structure': 'Market Structure'
+    };
+
+    return toolDisplayNames[toolName] || toolName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
   /**
@@ -457,6 +639,13 @@ export class ToolsManager {
     const resultContainer = document.getElementById(`result-${toolName}`);
     if (resultContainer) {
       resultContainer.style.display = 'none';
+    }
+
+    // Clean up associated DataCard
+    const dataCard = this.dataCards.get(toolName);
+    if (dataCard) {
+      dataCard.destroy();
+      this.dataCards.delete(toolName);
     }
   }
 
@@ -507,6 +696,10 @@ export class ToolsManager {
    * Destroy tools manager
    */
   destroy(): void {
+    // Clean up all DataCards
+    this.dataCards.forEach(card => card.destroy());
+    this.dataCards.clear();
+
     this.isInitialized = false;
     console.log('🗑️ Tools Manager destroyed');
   }
