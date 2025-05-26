@@ -228,6 +228,23 @@ class App {
     }
   }
 
+  private setupAgentDashboardButton(): void {
+    const agentDashboardBtn = document.getElementById('agent-dashboard-btn');
+    if (agentDashboardBtn && this.agentDashboard) {
+      agentDashboardBtn.addEventListener('click', () => {
+        this.agentDashboard!.toggleVisibility();
+
+        // Update button appearance based on dashboard visibility
+        const isVisible = this.agentDashboard!.visible;
+        if (isVisible) {
+          agentDashboardBtn.classList.add('active');
+        } else {
+          agentDashboardBtn.classList.remove('active');
+        }
+      });
+    }
+  }
+
   private setupSettingsModal(): void {
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');
@@ -299,9 +316,12 @@ class App {
 
   private initializeAgentDashboard(): void {
     try {
-      // Initialize agent dashboard
-      this.agentDashboard = new AgentDashboard('agent-dashboard-container');
+      // Initialize agent dashboard with ChatApp reference
+      this.agentDashboard = new AgentDashboard('agent-dashboard-container', this.chatApp);
       console.log('🤖 Agent dashboard initialized (Ctrl+M to toggle)');
+
+      // Set up agent dashboard button now that dashboard is initialized
+      this.setupAgentDashboardButton();
 
       // Make dashboard accessible for debugging
       (window as any).agentDashboard = this.agentDashboard;
@@ -476,6 +496,11 @@ class App {
     if (viewName === 'tools' && !this.toolsInitialized) {
       this.initializeTools();
     }
+
+    // Handle dashboard view - embed agent dashboard into the tab
+    if (viewName === 'dashboard' && this.agentDashboard) {
+      this.embedDashboardInTab();
+    }
   }
 
   /**
@@ -492,6 +517,156 @@ class App {
     } catch (error) {
       console.error('❌ Failed to initialize tools:', error);
     }
+  }
+
+  /**
+   * Embed agent dashboard into the dashboard tab view
+   */
+  private embedDashboardInTab(): void {
+    if (!this.agentDashboard) return;
+
+    const dashboardWrapper = document.getElementById('dashboard-content-wrapper');
+    const agentDashboardContainer = document.getElementById('agent-dashboard-container');
+
+    if (dashboardWrapper && agentDashboardContainer) {
+      // Check if dashboard content already exists in the tab
+      if (dashboardWrapper.querySelector('.agent-dashboard')) {
+        return; // Already embedded
+      }
+
+      // Get the dashboard content from the original container
+      const dashboardContent = agentDashboardContainer.querySelector('.agent-dashboard');
+
+      if (dashboardContent) {
+        // Clone the dashboard content for the tab view
+        const clonedContent = dashboardContent.cloneNode(true) as HTMLElement;
+
+        // Remove overlay-specific classes and styles
+        clonedContent.classList.remove('hidden');
+        clonedContent.classList.add('visible');
+        clonedContent.style.position = 'static';
+        clonedContent.style.zIndex = 'auto';
+        clonedContent.style.background = 'transparent';
+        clonedContent.style.boxShadow = 'none';
+        clonedContent.style.border = 'none';
+        clonedContent.style.borderRadius = '0';
+        clonedContent.style.width = '100%';
+        clonedContent.style.height = '100%';
+        clonedContent.style.maxWidth = 'none';
+        clonedContent.style.maxHeight = 'none';
+        clonedContent.style.transform = 'none';
+        clonedContent.style.top = 'auto';
+        clonedContent.style.left = 'auto';
+        clonedContent.style.right = 'auto';
+        clonedContent.style.bottom = 'auto';
+
+        // Add the cloned content to the tab view
+        dashboardWrapper.innerHTML = '';
+        dashboardWrapper.appendChild(clonedContent);
+
+        // Set up event listeners for the cloned content
+        this.setupTabDashboardEventListeners(clonedContent);
+
+        // Debug: Check what data is available
+        console.log('🔍 Dashboard data check:');
+        console.log('Memory stats:', multiStepAgent.getMemoryStats());
+        console.log('Performance stats:', multiStepAgent.getPerformanceStats());
+        console.log('Analysis history:', multiStepAgent.getAnalysisHistory(undefined, 5));
+
+        // Refresh the dashboard data
+        this.agentDashboard.show(); // This will trigger a refresh
+        this.agentDashboard.hide(); // Hide the overlay version
+      }
+    }
+  }
+
+  /**
+   * Set up event listeners for the dashboard in tab view
+   */
+  private setupTabDashboardEventListeners(dashboardElement: HTMLElement): void {
+    // Refresh button
+    const refreshBtn = dashboardElement.querySelector('#dashboard-refresh') as HTMLButtonElement;
+    refreshBtn?.addEventListener('click', () => {
+      if (this.agentDashboard) {
+        // Trigger refresh and then update the tab view
+        this.agentDashboard.show();
+        this.agentDashboard.hide();
+        setTimeout(() => this.embedDashboardInTab(), 100);
+      }
+    });
+
+    // Clear memory button
+    const clearMemoryBtn = dashboardElement.querySelector('#clear-memory') as HTMLButtonElement;
+    clearMemoryBtn?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all agent memory? This action cannot be undone.')) {
+        multiStepAgent.clearMemory();
+        // Refresh the tab view
+        setTimeout(() => this.embedDashboardInTab(), 100);
+        this.showToast('Memory cleared successfully!');
+      }
+    });
+
+    // New conversation button
+    const newConversationBtn = dashboardElement.querySelector('#new-conversation') as HTMLButtonElement;
+    newConversationBtn?.addEventListener('click', () => {
+      // Clear agent memory
+      multiStepAgent.startNewConversation();
+
+      // Clear chat UI if available
+      if (this.chatApp) {
+        this.chatApp.clearMessages();
+      }
+
+      this.showToast('New conversation started!');
+    });
+
+    // Export data button
+    const exportDataBtn = dashboardElement.querySelector('#export-data') as HTMLButtonElement;
+    exportDataBtn?.addEventListener('click', () => {
+      try {
+        const data = {
+          memoryStats: multiStepAgent.getMemoryStats(),
+          performanceStats: multiStepAgent.getPerformanceStats(),
+          recentAnalysis: multiStepAgent.getAnalysisHistory(undefined, 20),
+          exportedAt: new Date().toISOString()
+        };
+
+        const dataStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `agent-data-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast('Data exported successfully!');
+
+      } catch (error) {
+        console.error('Failed to export data:', error);
+        this.showToast('Failed to export data', 'error');
+      }
+    });
+  }
+
+  private showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    const toast = document.createElement('div');
+    toast.className = `dashboard-toast toast-${type}`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 
   private closeAllModals(): void {

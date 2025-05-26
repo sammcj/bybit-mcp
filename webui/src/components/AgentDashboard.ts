@@ -3,18 +3,29 @@
  */
 
 import { multiStepAgent } from '@/services/multiStepAgent';
+import type { ChatApp } from './ChatApp';
+
+// Interface for memory statistics
+interface MemoryStats {
+  conversations: number;
+  marketContexts: number;
+  analysisHistory: number;
+  totalSymbols: number;
+}
 
 export class AgentDashboard {
   private container: HTMLElement;
   private isVisible: boolean = false;
   private refreshInterval: NodeJS.Timeout | null = null;
+  private chatApp?: ChatApp;
 
-  constructor(containerId: string) {
+  constructor(containerId: string, chatApp?: ChatApp) {
     this.container = document.getElementById(containerId)!;
     if (!this.container) {
       throw new Error(`Container element with id "${containerId}" not found`);
     }
 
+    this.chatApp = chatApp;
     this.initialize();
   }
 
@@ -40,6 +51,20 @@ export class AgentDashboard {
         </div>
 
         <div class="dashboard-content">
+          <!-- Empty State Notice -->
+          <div class="dashboard-notice" id="dashboard-notice" style="display: none;">
+            <div class="notice-content">
+              <h4>🤖 Agent Dashboard</h4>
+              <p>This dashboard will show agent performance metrics, memory usage, and analysis history once you start using the agent mode.</p>
+              <p><strong>To get started:</strong></p>
+              <ol>
+                <li>Enable Agent Mode in Settings (⚙️)</li>
+                <li>Ask questions about cryptocurrency markets</li>
+                <li>Watch the dashboard populate with data!</li>
+              </ol>
+            </div>
+          </div>
+
           <!-- Memory Statistics -->
           <div class="dashboard-section">
             <h4>Memory Statistics</h4>
@@ -185,6 +210,10 @@ export class AgentDashboard {
     }
   }
 
+  public get visible(): boolean {
+    return this.isVisible;
+  }
+
   private refreshDashboard(): void {
     this.updateMemoryStats();
     this.updatePerformanceStats();
@@ -204,6 +233,9 @@ export class AgentDashboard {
       if (contextsEl) contextsEl.textContent = memoryStats.marketContexts.toString();
       if (analysesEl) analysesEl.textContent = memoryStats.analysisHistory.toString();
       if (symbolsEl) symbolsEl.textContent = memoryStats.totalSymbols.toString();
+
+      // Show helpful message if no data yet
+      this.updateEmptyStateMessage(memoryStats);
 
     } catch (error) {
       console.warn('Failed to update memory stats:', error);
@@ -285,7 +317,14 @@ export class AgentDashboard {
   }
 
   private startNewConversation(): void {
+    // Clear agent memory
     multiStepAgent.startNewConversation();
+
+    // Clear chat UI if available
+    if (this.chatApp) {
+      this.chatApp.clearMessages();
+    }
+
     this.showToast('New conversation started!');
   }
 
@@ -353,6 +392,38 @@ export class AgentDashboard {
   private truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  }
+
+  private updateEmptyStateMessage(memoryStats: MemoryStats): void {
+    const hasData = memoryStats.conversations > 0 || memoryStats.analysisHistory > 0;
+
+    if (!hasData) {
+      // Add notice to dashboard if no data
+      const dashboardContent = this.container.querySelector('.dashboard-content');
+      if (dashboardContent && !dashboardContent.querySelector('.dashboard-notice')) {
+        const notice = document.createElement('div');
+        notice.className = 'dashboard-notice';
+        notice.innerHTML = `
+          <div class="notice-content">
+            <h4>🤖 Agent Dashboard</h4>
+            <p>This dashboard will show agent performance metrics, memory usage, and analysis history once you start using the agent mode.</p>
+            <p><strong>To get started:</strong></p>
+            <ol>
+              <li>Enable Agent Mode in Settings (⚙️)</li>
+              <li>Ask questions about cryptocurrency markets</li>
+              <li>Watch the dashboard populate with data!</li>
+            </ol>
+          </div>
+        `;
+        dashboardContent.insertBefore(notice, dashboardContent.firstChild);
+      }
+    } else {
+      // Remove notice if data exists
+      const notice = this.container.querySelector('.dashboard-notice');
+      if (notice) {
+        notice.remove();
+      }
+    }
   }
 
   public destroy(): void {

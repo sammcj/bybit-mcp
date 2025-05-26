@@ -43,7 +43,7 @@ export class MCPClient {
     }
     this.timeout = timeout;
 
-    console.log('🔧 MCP Client initialized with baseUrl:', this.baseUrl);
+    console.log('🔧 MCP Client initialised with baseUrl:', this.baseUrl);
     console.log('🔧 Environment check:', {
       hostname: typeof window !== 'undefined' ? window.location.hostname : 'server-side',
       port: typeof window !== 'undefined' ? window.location.port : 'server-side',
@@ -58,7 +58,7 @@ export class MCPClient {
    */
   async initialize(): Promise<void> {
     try {
-      console.log('🔌 Initializing MCP client...');
+      console.log('🔌 Initialising MCP client...');
       console.log('🔗 MCP endpoint:', this.baseUrl);
 
       // For now, skip the complex MCP client setup and just load tools
@@ -70,12 +70,12 @@ export class MCPClient {
       this.connected = this.tools.length > 0;
 
       if (this.connected) {
-        console.log('✅ MCP client initialized via HTTP');
+        console.log('✅ MCP client initialised via HTTP');
       } else {
         console.warn('⚠️ No tools loaded, but continuing...');
       }
     } catch (error) {
-      console.error('❌ Failed to initialize MCP client:', error);
+      console.error('❌ Failed to initialise MCP client:', error);
       console.error('❌ MCP Error details:', {
         name: error instanceof Error ? error.name : 'Unknown',
         message: error instanceof Error ? error.message : String(error),

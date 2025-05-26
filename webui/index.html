@@ -28,6 +28,9 @@
             <span class="version">v1.0.0</span>
           </div>
           <div class="header-controls">
+            <button id="agent-dashboard-btn" class="agent-dashboard-btn" aria-label="Agent Dashboard">
+              <span class="dashboard-icon">🤖</span>
+            </button>
             <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
               <span class="theme-icon">🌙</span>
             </button>
@@ -50,6 +53,10 @@
             <button class="nav-item" data-view="tools">
               <span class="nav-icon">🔧</span>
               <span class="nav-label">MCP Tools</span>
+            </button>
+            <button class="nav-item" data-view="dashboard">
+              <span class="nav-icon">🤖</span>
+              <span class="nav-label">Agent Dashboard</span>
             </button>
           </nav>
         </aside>
@@ -99,6 +106,16 @@
               <h2>MCP Tools</h2>
               <div class="tools-grid" id="tools-grid">
                 <!-- Tools will be populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Dashboard View -->
+          <div id="dashboard-view" class="view">
+            <div class="dashboard-container">
+              <h2>Agent Dashboard</h2>
+              <div id="dashboard-content-wrapper">
+                <!-- Agent dashboard will be embedded here -->
               </div>
             </div>
           </div>

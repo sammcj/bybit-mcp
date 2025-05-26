@@ -73,7 +73,8 @@
 }
 
 .theme-toggle,
-.settings-btn {
+.settings-btn,
+.agent-dashboard-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,9 +87,15 @@
 }
 
 .theme-toggle:hover,
-.settings-btn:hover {
+.settings-btn:hover,
+.agent-dashboard-btn:hover {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
+}
+
+.agent-dashboard-btn.active {
+  background-color: var(--color-primary);
+  color: var(--text-inverse);
 }
 
 /* Main Content */
@@ -646,6 +653,22 @@
   padding: var(--spacing-lg);
   height: 100%;
   overflow-y: auto;
+}
+
+/* Dashboard */
+.dashboard-container {
+  padding: var(--spacing-lg);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.dashboard-container h2 {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+#dashboard-content-wrapper {
+  height: calc(100% - 3rem);
 }
 
 .tools-header {
