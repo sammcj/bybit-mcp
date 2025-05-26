@@ -10,9 +10,7 @@ import { ChatApp } from './components/ChatApp';
 import { DebugConsole } from './components/DebugConsole';
 import { DataVerificationPanel } from './components/DataVerificationPanel';
 import { AgentDashboard } from './components/AgentDashboard';
-import { chartManager } from './components/ChartManager';
 import { toolsManager } from './components/ToolsManager';
-import { analysisManager } from './components/AnalysisManager';
 import { configService } from './services/configService';
 import { agentConfigService } from './services/agentConfig';
 import { mcpClient } from './services/mcpClient';
@@ -27,9 +25,7 @@ class App {
   private verificationPanel?: DataVerificationPanel;
   private agentDashboard?: AgentDashboard;
   private isInitialized = false;
-  private chartsInitialized = false;
   private toolsInitialized = false;
-  private analysisInitialized = false;
 
   async initialize(): Promise<void> {
     if (this.isInitialized) return;
@@ -477,28 +473,8 @@ class App {
     }
 
     // Initialize components when their views are accessed
-    if (viewName === 'charts' && !this.chartsInitialized) {
-      this.initializeCharts();
-    } else if (viewName === 'tools' && !this.toolsInitialized) {
+    if (viewName === 'tools' && !this.toolsInitialized) {
       this.initializeTools();
-    } else if (viewName === 'analysis' && !this.analysisInitialized) {
-      this.initializeAnalysis();
-    }
-  }
-
-  /**
-   * Initialize charts when charts tab is first accessed
-   */
-  private async initializeCharts(): Promise<void> {
-    if (this.chartsInitialized) return;
-
-    try {
-      console.log('📈 Initializing charts...');
-      await chartManager.initialize();
-      this.chartsInitialized = true;
-      console.log('✅ Charts initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize charts:', error);
     }
   }
 
@@ -515,22 +491,6 @@ class App {
       console.log('✅ Tools initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize tools:', error);
-    }
-  }
-
-  /**
-   * Initialize analysis when analysis tab is first accessed
-   */
-  private async initializeAnalysis(): Promise<void> {
-    if (this.analysisInitialized) return;
-
-    try {
-      console.log('🧠 Initializing analysis...');
-      await analysisManager.initialize();
-      this.analysisInitialized = true;
-      console.log('✅ Analysis initialized successfully');
-    } catch (error) {
-      console.error('❌ Failed to initialize analysis:', error);
     }
   }
 

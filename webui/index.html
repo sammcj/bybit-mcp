@@ -47,17 +47,9 @@
               <span class="nav-icon">💬</span>
               <span class="nav-label">AI Chat</span>
             </button>
-            <button class="nav-item" data-view="charts">
-              <span class="nav-icon">📈</span>
-              <span class="nav-label">Charts</span>
-            </button>
             <button class="nav-item" data-view="tools">
               <span class="nav-icon">🔧</span>
               <span class="nav-label">MCP Tools</span>
-            </button>
-            <button class="nav-item" data-view="analysis">
-              <span class="nav-icon">🧠</span>
-              <span class="nav-label">Analysis</span>
             </button>
           </nav>
         </aside>
@@ -100,67 +92,12 @@
             </div>
           </div>
 
-          <!-- Charts View -->
-          <div id="charts-view" class="view">
-            <div class="charts-container">
-              <div class="chart-controls">
-                <select id="symbol-select" class="symbol-select">
-                  <option value="BTCUSDT">BTC/USDT</option>
-                  <option value="ETHUSDT">ETH/USDT</option>
-                  <option value="SOLUSDT">SOL/USDT</option>
-                  <option value="XRPUSDT">XRP/USDT</option>
-                  <option value="DOGEUSDT">DOGE/USDT</option>
-                </select>
-                <select id="interval-select" class="interval-select">
-                  <option value="1">1m</option>
-                  <option value="5">5m</option>
-                  <option value="15">15m</option>
-                  <option value="60">1h</option>
-                  <option value="240">4h</option>
-                  <option value="D">1D</option>
-                </select>
-                <button id="refresh-chart" class="refresh-btn">Refresh</button>
-              </div>
-              <div class="chart-grid">
-                <div class="chart-panel">
-                  <h3>Price Chart</h3>
-                  <div id="price-chart" class="chart-container"></div>
-                </div>
-                <div class="chart-panel">
-                  <h3>Volume</h3>
-                  <div id="volume-chart" class="chart-container"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Tools View -->
           <div id="tools-view" class="view">
             <div class="tools-container">
               <h2>MCP Tools</h2>
               <div class="tools-grid" id="tools-grid">
                 <!-- Tools will be populated dynamically -->
-              </div>
-            </div>
-          </div>
-
-          <!-- Analysis View -->
-          <div id="analysis-view" class="view">
-            <div class="analysis-container">
-              <h2>Technical Analysis</h2>
-              <div class="analysis-panels">
-                <div class="analysis-panel">
-                  <h3>ML-Enhanced RSI</h3>
-                  <div id="ml-rsi-chart" class="analysis-chart"></div>
-                </div>
-                <div class="analysis-panel">
-                  <h3>Order Blocks</h3>
-                  <div id="order-blocks-chart" class="analysis-chart"></div>
-                </div>
-                <div class="analysis-panel">
-                  <h3>Market Structure</h3>
-                  <div id="market-structure-display" class="analysis-display"></div>
-                </div>
               </div>
             </div>
           </div>

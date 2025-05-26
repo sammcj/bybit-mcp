@@ -43,6 +43,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['lightweight-charts', 'chart.js'],
+    include: ['marked'],
   },
 })
