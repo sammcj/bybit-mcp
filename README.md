@@ -28,6 +28,8 @@ This MCP server provides the following tools for interacting with Bybit's API:
 
 There is also a **highly experimental** WebUI, see [WebUI README](webui/README.md) for details.
 
+![WebUI Screenshot](webui/screenshot.png)
+
 All code is subject to breaking changes and feature additions / removals as I continue to develop this project.
 
 ## Requirements & Installation
