@@ -380,7 +380,7 @@ export class ToolsManager {
     }
 
     // Extract actual data from MCP content structure
-    let actualData = this.extractActualData(result);
+    const actualData = this.extractActualData(result);
 
     // Try to create a DataCard for visualisable data
     const dataCardCreated = this.tryCreateDataCard(resultContainer, resultContent, actualData);

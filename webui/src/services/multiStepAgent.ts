@@ -124,7 +124,7 @@ export class MultiStepAgentService {
     }
 
     const startTime = Date.now();
-    let toolCallsCount = 0;
+    const toolCallsCount = 0;
 
     try {
       agentConfigService.updateState({ isProcessing: true });
@@ -305,7 +305,7 @@ export class MultiStepAgentService {
     }
 
     const startTime = Date.now();
-    let toolCallsCount = 0;
+    const toolCallsCount = 0;
 
     try {
       agentConfigService.updateState({ isProcessing: true });
