@@ -218,6 +218,40 @@ export class DataCard {
   }
 
   /**
+   * Format timestamp for X-axis labels
+   */
+  private formatTimestamp(timestamp: number, interval: string): string {
+    const date = new Date(timestamp);
+
+    // For different intervals, show different levels of detail
+    switch (interval) {
+      case '1':  // 1 minute
+      case '5':  // 5 minutes
+      case '15': // 15 minutes
+      case '30': // 30 minutes
+        return date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      case '60':  // 1 hour
+      case '240': // 4 hours
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit'
+        });
+      case 'D':   // Daily
+      case 'W':   // Weekly
+      default:
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        });
+    }
+  }
+
+  /**
    * Render candlestick chart for kline data
    */
   private renderCandlestickChart(): void {
@@ -239,10 +273,10 @@ export class DataCard {
     const maxWidth = Math.min(this.chartContainer.clientWidth || 600, 800); // Cap at 800px
     const containerWidth = Math.max(maxWidth - 40, 400); // Ensure minimum 400px with padding
     canvas.width = containerWidth;
-    canvas.height = 300;
+    canvas.height = 350; // Increased height for X-axis labels
     canvas.style.width = '100%';
     canvas.style.maxWidth = `${containerWidth}px`;
-    canvas.style.height = '300px';
+    canvas.style.height = '350px';
     canvas.style.border = '1px solid #ddd';
     canvas.style.display = 'block';
     canvas.style.margin = '0 auto';
@@ -289,9 +323,9 @@ export class DataCard {
     const priceRange = maxPrice - minPrice;
     const padding = priceRange * 0.1;
 
-    // Chart dimensions
+    // Chart dimensions - adjusted for X-axis labels
     const chartWidth = canvas.width - 80;
-    const chartHeight = canvas.height - 60;
+    const chartHeight = canvas.height - 90; // More space for X-axis
     const chartX = 60;
     const chartY = 20;
 
@@ -310,7 +344,17 @@ export class DataCard {
       ctx.stroke();
     }
 
-    // Draw price labels
+    // Draw vertical grid lines for time
+    const timeSteps = Math.min(candles.length, 6);
+    for (let i = 0; i <= timeSteps; i++) {
+      const x = chartX + (chartWidth * i) / timeSteps;
+      ctx.beginPath();
+      ctx.moveTo(x, chartY);
+      ctx.lineTo(x, chartY + chartHeight);
+      ctx.stroke();
+    }
+
+    // Draw price labels (Y-axis)
     ctx.fillStyle = '#666';
     ctx.font = '12px Arial';
     ctx.textAlign = 'right';
@@ -318,6 +362,18 @@ export class DataCard {
       const price = maxPrice + padding - ((maxPrice + padding - (minPrice - padding)) * i) / 5;
       const y = chartY + (chartHeight * i) / 5;
       ctx.fillText(price.toFixed(4), chartX - 10, y + 4);
+    }
+
+    // Draw time labels (X-axis)
+    ctx.textAlign = 'center';
+    const interval = this.config.data.interval || 'D';
+    for (let i = 0; i <= timeSteps; i++) {
+      const candleIndex = Math.floor((candles.length - 1) * i / timeSteps);
+      if (candles[candleIndex]) {
+        const x = chartX + (chartWidth * i) / timeSteps;
+        const timeLabel = this.formatTimestamp(candles[candleIndex].timestamp, interval);
+        ctx.fillText(timeLabel, x, chartY + chartHeight + 20);
+      }
     }
 
     // Draw candlesticks
@@ -358,8 +414,8 @@ export class DataCard {
     ctx.font = 'bold 14px Arial';
     ctx.textAlign = 'left';
     const symbol = this.config.data.symbol || 'Symbol';
-    const interval = this.config.data.interval || '';
-    ctx.fillText(`${symbol} ${interval} Candlestick Chart`, chartX, 15);
+    const intervalLabel = this.config.data.interval || '';
+    ctx.fillText(`${symbol} ${intervalLabel} Candlestick Chart`, chartX, 15);
 
     // Add current price info
     const lastCandle = candles[candles.length - 1];

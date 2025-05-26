@@ -33,6 +33,9 @@ export class ChatApp {
   private lastCitationAttachTime: number = 0;
   private citationAttachThrottle: number = 300; // Throttle to 300ms
   private messageRenderer: MessageRenderer;
+  private retryCount: number = 0;
+  private maxRetries: number = 2; // Maximum number of automatic retries
+  private processingMessage: HTMLElement | null = null;
 
   constructor() {
     // Configure marked for safe HTML rendering
@@ -152,11 +155,81 @@ export class ChatApp {
     // Just ensure the chat messages container is ready for new messages
   }
 
+  /**
+   * Show processing indicator
+   */
+  private showProcessingIndicator(isRetry: boolean = false): void {
+    this.hideProcessingIndicator(); // Remove any existing indicator
+
+    this.processingMessage = document.createElement('div');
+    this.processingMessage.className = 'processing-message';
+    this.processingMessage.innerHTML = `
+      <div class="message-header">
+        <div class="message-avatar">AI</div>
+        <span class="message-name">Assistant</span>
+        <span class="message-time">${new Date().toLocaleTimeString()}</span>
+      </div>
+      <div class="message-content processing">
+        <div class="processing-indicator">
+          <div class="processing-dots">
+            <span>•</span>
+            <span>•</span>
+            <span>•</span>
+          </div>
+          <span class="processing-text">
+            ${isRetry ? `🔄 Retrying... (attempt ${this.retryCount + 1}/${this.maxRetries + 1})` : '🤔 Processing your request...'}
+          </span>
+        </div>
+      </div>
+    `;
+
+    this.chatMessages.appendChild(this.processingMessage);
+    this.scrollToBottom();
+  }
+
+  /**
+   * Hide processing indicator
+   */
+  private hideProcessingIndicator(): void {
+    if (this.processingMessage) {
+      this.processingMessage.remove();
+      this.processingMessage = null;
+    }
+  }
+
+  /**
+   * Check if AI response is empty or invalid
+   */
+  private isEmptyResponse(content: string): boolean {
+    if (!content) return true;
+
+    const trimmed = content.trim();
+    if (!trimmed) return true;
+
+    // Remove the overly strict length check - valid responses can be short
+    // Only check for truly empty or nonsensical patterns
+    const emptyPatterns = [
+      /^\.+$/,        // Only dots
+      /^-+$/,         // Only dashes
+      /^\*+$/,        // Only asterisks
+      /^_+$/,         // Only underscores
+      /^\?+$/,        // Only question marks
+      /^!+$/          // Only exclamation marks
+    ];
+
+    return emptyPatterns.some(pattern => pattern.test(trimmed));
+  }
+
   public async sendMessage(content?: string): Promise<void> {
     const messageContent = content || this.chatInput.value.trim();
 
     if (!messageContent || this.state.isLoading) {
       return;
+    }
+
+    // Reset retry count for new messages
+    if (!content) {
+      this.retryCount = 0;
     }
 
     // Clear input if using the input field
@@ -166,21 +239,22 @@ export class ChatApp {
       this.updateSendButton();
     }
 
-    // Create user message
-    const userMessage: ChatUIMessage = {
-      id: this.generateMessageId(),
-      role: 'user',
-      content: messageContent,
-      timestamp: Date.now(),
-    };
-
-    // Add user message to state and UI
-    this.addMessage(userMessage);
+    // Create user message (only for new messages, not retries)
+    if (this.retryCount === 0) {
+      const userMessage: ChatUIMessage = {
+        id: this.generateMessageId(),
+        role: 'user',
+        content: messageContent,
+        timestamp: Date.now(),
+      };
+      this.addMessage(userMessage);
+    }
 
     // Set loading state
     this.state.isLoading = true;
     this.updateSendButton();
     this.showTypingIndicator();
+    this.showProcessingIndicator(this.retryCount > 0);
 
     try {
       console.log('💬 Starting chat request...');
@@ -193,6 +267,9 @@ export class ChatApp {
         await this.handleLegacyChat(messageContent);
       }
 
+      // Reset retry count on success
+      this.retryCount = 0;
+
     } catch (error) {
       console.error('❌ Failed to send message:', error);
       console.error('❌ Error details:', {
@@ -202,21 +279,38 @@ export class ChatApp {
         details: (error as any)?.details
       });
 
-      // Add error message
+      // Check if we should retry
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        console.log(`🔄 Retrying... attempt ${this.retryCount}/${this.maxRetries}`);
+
+        // Hide current processing indicator and show retry indicator
+        this.hideProcessingIndicator();
+
+        // Wait a moment before retrying
+        setTimeout(() => {
+          this.sendMessage(messageContent);
+        }, 1000);
+        return;
+      }
+
+      // Max retries reached, show error
       const errorMessage: ChatUIMessage = {
         id: this.generateMessageId(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        content: `Sorry, I encountered an error after ${this.maxRetries + 1} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: Date.now(),
         error: error instanceof Error ? error.message : 'Unknown error',
       };
 
       this.addMessage(errorMessage);
+      this.retryCount = 0; // Reset for next message
     } finally {
       this.state.isLoading = false;
       this.state.currentStreamingId = undefined;
       this.updateSendButton();
       this.hideTypingIndicator();
+      this.hideProcessingIndicator();
     }
   }
 
@@ -266,6 +360,11 @@ export class ChatApp {
           this.handleWorkflowEvent(event);
         }
       );
+
+      // Check if response is empty
+      if (this.isEmptyResponse(assistantMessage.content)) {
+        throw new Error('Received empty response from agent');
+      }
 
       // Remove streaming cursor and finalize
       assistantMessage.isStreaming = false;
@@ -335,6 +434,11 @@ export class ChatApp {
     const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
 
     if (lastAssistantMessage && lastAssistantMessage.content) {
+      // Check if response is empty
+      if (this.isEmptyResponse(lastAssistantMessage.content)) {
+        throw new Error('Received empty response from AI');
+      }
+
       // Add the final assistant response to the UI
       const assistantMessage: ChatUIMessage = {
         id: this.generateMessageId(),
@@ -347,15 +451,7 @@ export class ChatApp {
     } else {
       // No content in the final response
       console.warn('⚠️ No content in final assistant message:', lastAssistantMessage);
-
-      const errorMessage: ChatUIMessage = {
-        id: this.generateMessageId(),
-        role: 'assistant',
-        content: 'I apologize, but I received an empty response. Please try your question again.',
-        timestamp: Date.now(),
-        error: 'Empty response from AI',
-      };
-      this.addMessage(errorMessage);
+      throw new Error('Received empty response from AI');
     }
   }
 
@@ -388,10 +484,6 @@ export class ChatApp {
     this.renderMessage(message);
     this.scrollToBottom();
   }
-
-
-
-
 
   private renderMessage(message: ChatUIMessage): void {
     console.log('[ChatApp] renderMessage called with message:', JSON.parse(JSON.stringify(message))); // DEV_PLAN debug
@@ -548,10 +640,6 @@ export class ChatApp {
     return null;
   }
 
-
-
-
-
   private formatMessageContent(content: string): string {
     // Process citations first
     const processedMessage = citationProcessor.processMessage(content);
@@ -585,8 +673,6 @@ export class ChatApp {
       .replace(/on\w+='[^']*'/gi, '')
       .replace(/javascript:/gi, '');
   }
-
-
 
   /**
    * Throttled version of addCitationEventListeners to reduce spam during streaming
@@ -791,6 +877,7 @@ export class ChatApp {
   public clearMessages(): void {
     this.state.messages = [];
     this.fullConversationHistory = [];
+    this.retryCount = 0;
     this.chatMessages.innerHTML = '';
     this.loadWelcomeMessage();
   }
